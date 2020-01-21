@@ -6,7 +6,7 @@ import gui_setup.gui_items
 class Btn(object):
     # Btn class takes in two integers, and any number of strings to create a tkinter button
     # @param col is the column location for the button (integer)
-    # @param rw is the Row location for the button (integer)
+    # @param rw is the Item location for the button (integer)
     # @param btntxt is the initial text for the button
     # @param *args is meant to take in the additional text the button can have (button cycles through given text.
     def __init__(self, col, rw, btntxt, *args):
@@ -50,7 +50,7 @@ class Btn(object):
 class Combo(object):
     # Combo class takes in two integers and any number of strings to create a tkinter Combobox
     # @param col is the column location for the Combobox (integer)
-    # @param rw is the Row location for the Combobox (integer)
+    # @param rw is the Item location for the Combobox (integer)
     # @param btntxt is the initial text for the Combobox
     # @param *args is meant to take in the additional text the Combobox can have.
     def __init__(self, col, rw, btntxt, *args):
@@ -61,11 +61,13 @@ class Combo(object):
         self.cmb = Combobox()
 
     def combo_setup(self, window):
-        #Sets up the 
+        # Sets up the Combobox and adds it to the window at the given location
+        # @param window is a tkinter window object that the button will be added to
         self.cmb = Combobox(window, state='readonly')
         self.cmb['values'] = tuple(self.args)
         self.cmb.current(0)
         self.cmb.grid(column=self.col, row=self.rw)
 
     def get_cmb(self):
+        #Returns the current selection in the Combobox
         return self.cmb.get()
