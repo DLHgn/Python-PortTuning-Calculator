@@ -33,16 +33,37 @@ class Btn(object):
         self.btn.grid(column=self.col, row=self.rw, padx=pad, pady=pad)
 
     def clicked(self):
-        #This function handles the button event. Differentiates between a button click used to determine units of given
-        #data and the submit button that starts the calculations.
+        # This function handles the button event. Differentiates between a button click used to determine units of given
+        # data and the submit button that starts the calculations.
         if self.btntxt == 'Submit':
-            gui_setup.computations.set_port_tuning_entry()  #triggers port tuning computations and sets it to an Entry object
+            # triggers port tuning computations and sets it to an Entry object
+            gui_setup.computations.set_port_tuning_entry()
+            # below is for testing purposes
+            gui_setup.computations.calculate_and_set_wb()
+            gui_setup.computations.calculate_and_set_w()
+            gui_setup.computations.calculate_and_set_s()
+            gui_setup.computations.calculate_and_set_ccab()
+            gui_setup.computations.calculate_and_set_ral()
+            gui_setup.computations.calculate_and_set_lmap()
+            gui_setup.computations.calculate_and_set_zb()
+            gui_setup.computations.calculate_and_set_pd()
+            gui_setup.computations.calculate_and_set_i()
+            gui_setup.computations.calculate_and_set_u()
+            gui_setup.computations.calculate_zccab()
+            gui_setup.computations.calculate_iccab()
+            gui_setup.computations.calculate_zlmap()
+            gui_setup.computations.calculate_ilmap()
+            gui_setup.computations.calculate_port_velocity()
+            gui_setup.computations.calculate_cone_excursion()
+            gui_setup.computations.calculate_frequency_response()
         if self.clickCount < self.num_args:
-            self.btn.configure(text=self.args[0][self.clickCount])  #cycles through given button text if not at end of list
+            # cycles through given button text if not at end of list
+            self.btn.configure(text=self.args[0][self.clickCount])
             self.clickCount += 1
             return
         else:
-            self.btn.configure(text=self.btntxt)  #if at the end of the list, button text resets to its default
+            # if at the end of the list, button text resets to its default
+            self.btn.configure(text=self.btntxt)
             self.clickCount = 0
             return
 

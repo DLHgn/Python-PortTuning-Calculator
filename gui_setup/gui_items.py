@@ -3,11 +3,11 @@ from gui_setup import buttons
 
 
 class Item(object):
-    #The Item class takes in text and location to setup an item within the GUI (can consist of a label,
-    #entry, button, and/or combobox)
-    #@param text is a string and represents the text set to the label of the item
-    #@param col is an integer and represents the column the item will start on
-    #@param rw is an integer and represents the row the item will start on
+    # The Item class takes in text and location to setup an item within the GUI (can consist of a label,
+    # entry, button, and/or combobox)
+    # @param text is a string and represents the text set to the label of the item
+    # @param col is an integer and represents the column the item will start on
+    # @param rw is an integer and represents the row the item will start on
     def __init__(self, text, col, rw):
         self.text = text
         self.col = col
@@ -35,22 +35,22 @@ class Item(object):
 
     def set_txtfield(self, value):
         #Sets a provided value into a readonly Entry.
-        #@param value is will be set into the Entry object as a string
+        #@param value will be set into the Entry object as a string
         self.txtField.configure(state='normal')  #must convert to normal state in order to alter
         self.txtField.delete(0, END)  #delete current content
         self.txtField.insert(0, round(value, 2))
         self.txtField.configure(state='readonly')  #change back to read only so user can't alter value
 
     def item_setup(self, window, pad, txtfield_width, default_text, *args, use_btn=True, use_cmb=False):
-        #Sets up an item into the given window with given formatting values. Has the option of using
-        #a button, combobox, or neither. Will always create a label and Entry object. Default is to use a button
-        #@param window is a tkinter Window object that the item will be added to
-        #@param pad is an integer with the padding being equal for x and y
-        #@param txtfield_width is an integer that represents the width of the Entry object
-        #@param default_text is a string that represents the first text option of a button or combobox
-        #@param *args takes in any number of strings to represent the other text options for the button or combobox
-        #@param use_btn is a boolean to identify if a button object should be incorporated with the item (default True)
-        #@param use_cmb is a boolean to i.d. if a combobox object should be incorporated with the item (default False)
+        # Sets up an item into the given window with given formatting values. Has the option of using
+        # a button, combobox, or neither. Will always create a label and Entry object. Default is to use a button
+        # @param window is a tkinter Window object that the item will be added to
+        # @param pad is an integer with the padding being equal for x and y
+        # @param txtfield_width is an integer that represents the width of the Entry object
+        # @param default_text is a string that represents the first text option of a button or combobox
+        # @param *args takes in any number of strings to represent the other text options for the button or combobox
+        # @param use_btn is a boolean to identify if a button object should be incorporated with the item (default True)
+        # @param use_cmb is a boolean to i.d. if a combobox object should be incorporated with the item (default False)
         label = Label(window, text=self.text)
         label.grid(column=self.col, row=self.rw, padx=pad, pady=pad, sticky=E)
         if use_btn:
