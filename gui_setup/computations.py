@@ -624,7 +624,7 @@ def calculate_and_set_pd():
     print("---Initial Givens: ")
     print("Zb: ", zb)
     print("Cms: ", cms)
-    print("Mms: ", mms)
+    print("Mms: ", mm)
     print("Le: ", le)
     print("Re: ", re)
     print("Rms: ", rms)
