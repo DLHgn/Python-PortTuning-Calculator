@@ -418,9 +418,9 @@ def convert_sd():
     if unit == "m^2":
         return float(__sd.get_txtfield())
     elif unit == "cm^2":
-        return float(__sd.get_txtfield()) * .00001
+        return float(__sd.get_txtfield()) * .0001
     elif unit == "mm^2":
-        return float(__sd.get_txtfield()) * .000001
+        return float(__sd.get_txtfield()) * .00001
     elif unit == "in^2":
         return float(__sd.get_txtfield()) / 1550
     elif unit == "ft^2":
@@ -643,7 +643,7 @@ def calculate_and_set_pd():
     print("X8: ", x8)
     print("X9: ", x9)
 
-    print("Pd: ", cmath.polar(test))
+    print("Pd: ", test)
 
     return x1/(x2+x3+x4+x5+x6+x7+x8+x9+re)
 
@@ -667,7 +667,7 @@ def calculate_and_set_i():
     rms = get_rms()
     bl = get_bl()
     sd = convert_sd()
-    vg = convert_net_volume_meters()
+    vg = get_vg()
     pd = calculate_and_set_pd()
 
     y1 = bl * sd * pd * __s * cms
@@ -681,7 +681,31 @@ def calculate_and_set_i():
     y9 = le * __s
 
     test = (y1 + y2 + y3 + vg)/(y4 + y5 + y6 + y7 + y8 + y9 + re)
-    print("i ", cmath.polar(test))
+
+    print("\n", "Calculations for I: ")
+
+    print("---Initial Givens: ")
+    print("Cms: ", cms)
+    print("Mms: ", mms)
+    print("Le: ", le)
+    print("Re: ", re)
+    print("Rms: ", rms)
+    print("Bl: ", bl)
+    print("Sd: ", sd)
+    print("Vg: ", vg)
+    print("Pd: ", pd)
+    print("---Calculated Chunks: ")
+    print("Y1: ", y1)
+    print("Y2: ", y2)
+    print("Y3: ", y3)
+    print("Y4: ", y4)
+    print("Y5: ", y5)
+    print("Y6: ", y6)
+    print("Y7: ", y7)
+    print("Y8: ", y8)
+    print("Y9: ", y9)
+
+    print("I: ", test)
 
     return (y1 + y2 + y3 + vg)/(y4 + y5 + y6 + y7 + y8 + y9 + re)
 
@@ -715,7 +739,26 @@ def calculate_and_set_u():
     z5 = rms * __s * cms
 
     test = ((z1 - z2) * z3)/(z4 + z5 +1)
-    print("u ", cmath.polar(test))
+
+    print("\n", "Calculations for U: ")
+
+    print("---Initial Givens: ")
+    print("Cms: ", cms)
+    print("Mms: ", mms)
+    print("Rms: ", rms)
+    print("Bl: ", bl)
+    print("Sd: ", sd)
+    print("Pd: ", pd)
+    print("I: ", i)
+    print("s: ", __s)
+    print("---Calculated Chunks: ")
+    print("Z1: ", z1)
+    print("Z2: ", z2)
+    print("Z3: ", z3)
+    print("Z4: ", z4)
+    print("Z5: ", z5)
+
+    print("u ", test)
 
     return ((z1 - z2) * z3)/(z4 + z5 + 1)
 
@@ -732,24 +775,28 @@ def calculate_zccab():
         calculate_and_set_ccab()
 
     # AC resistance of the capacitor
-    xccab = 1/(__w * __ccab)
+    zccab = 1/(__w * __ccab)
 
-    test = 1/(__w * __ccab)
-    print("xccab ", cmath.polar(test))
+    print("\n", "zccab (polar): ", cmath.polar(zccab))
+    print("zccab: ", zccab)
 
     # impedance of capacitors is represented as (xccab < -90). -90 = -PI/2 radians
-    return cmath.rect(xccab, (-1 * math.pi/2))
+    return 1/(__w * __ccab)
 
 
 def calculate_iccab():
     # This function will calculate and return Iccab which represents the current through the Ccab component of the
     # circuit model. Iccab is returned in rectangular coordinates.
+    # e represents the voltage and zccab represents impedance
 
     e = calculate_and_set_pd()
     zccab = calculate_zccab()
 
     test = e / zccab
-    print("iccab ", cmath.polar(test))
+    print("\n", "---Calculating Iccab")
+    print("zccab: ", zccab)
+    print("iccab (polar): ", cmath.polar(test))
+    print("iccab: ", test)
 
     return e / zccab
 
@@ -766,24 +813,29 @@ def calculate_zlmap():
         calculate_and_set_lmap()
 
     # AC resistance of an inductor
-    xlmap = __w * __lmap
+    zlmap = __w * __lmap
 
     test = __w * __lmap
-    print("xlmap ", cmath.polar(test))
+    print("zlmap (polar): ", cmath.polar(test))
+    print("zlmap: ", zlmap)
 
     # impedance of inductors is represented as (xlmap < 90). 90 = PI/2 radians
-    return cmath.rect(xlmap, (math.pi/2))
+    return cmath.rect(zlmap, (math.pi/2))
 
 
 def calculate_ilmap():
     # This function will calculate and return Ilmap which represents the current through the Lmap component of the
     # circuit model. Ilmap is returned in rectangular coordinates.
+    # e represents voltage and zlmap represents impedance
 
     e = calculate_and_set_pd()
     zlmap = calculate_zlmap()
 
     test = e / zlmap
-    print("ilmap ", cmath.polar(test))
+    print("\n", "---Calculating ILmap")
+    print("zlmap: ", zlmap)
+    print("ilmap (polar): ", cmath.polar(test))
+    print("ilmap: ", test)
 
     return e / zlmap
 
@@ -795,7 +847,12 @@ def calculate_port_velocity():
     ilmap = calculate_ilmap()
 
     test = (math.sqrt(2) * ilmap) / port_area
-    print("port_v ", cmath.polar(test))
+
+    print("\n", "---Calculating Port Velocity")
+    print("Port Area: ", port_area)
+    print("Ilmap: ", ilmap)
+    print("port_v (polar): ", cmath.polar(test))
+    print("port_v: ", test)
 
     return (math.sqrt(2) * ilmap) / port_area
 
@@ -806,7 +863,11 @@ def calculate_cone_excursion():
     u = calculate_and_set_u()
 
     test = (math.sqrt(2) * u) / __w
-    print("cone_ex ", cmath.polar(test))
+
+    print("\n", "---Calculating Cone Excursion")
+    print("U: ", u)
+    print("cone_ex (polar): ", cmath.polar(test))
+    print("cone_ex: ", test)
 
     return (math.sqrt(2) * u) / __w
 
@@ -817,7 +878,11 @@ def calculate_frequency_response():
     iccab = calculate_iccab()
 
     test = (__w * 1.2 * iccab) / .00002
-    print("freq_resp ", cmath.polar(test))
+
+    print("\n", "---Calculating Frequency Response")
+    print("Iccab: ", iccab)
+    print("freq_resp (polar): ", cmath.polar(test))
+    print("freq_resp: ", test)
 
     return (__w * 1.2 * iccab) / .00002
 
