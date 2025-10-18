@@ -44,7 +44,7 @@ def run_full_analysis_at_frequency(frequency, params):
     # Use core results to find final values
     # ----
 
-    port_vel = calculate_port_velocity(core_results, params['ap'])
+    port_vel = calculate_port_velocity(core_results, params['ap'], s, lmap)
     cone_exc = calculate_cone_excursion(core_results, w)
 
     # ----
@@ -129,18 +129,19 @@ def calculate_pd_i_u(s, params, ccab, ral, lmap, z_mech=None):
     }
 
 
-def calculate_port_velocity(core_results, port_area):
+def calculate_port_velocity(core_results, port_area, s, lmap):
     # Calculates port velocity from core results
-    # We need Ilmap. Ilmap = Pd / Zlmap
 
     pd = core_results['pd']
-    zlmap = 1j * (2.0 * math.pi * core_results['frequency']) * core_results[
-        'lmap']  # Need to pass freq and lmap in core_results
 
-    # --> This part needs refinement. Let's simplify for now.
-    # We'll need to pass s and lmap into core_results or re-calculate
+    # Calculates the impedance of the port
+    zlmap = s * lmap
 
-    return 0  # We'll fix this part later
+    # Calculates RMS port velocity
+    ilmap = pd / zlamp
+
+    # Returns the peak velocity (RMS * sqrt(s))/area
+    return (ilmap * math.sqrt(2)) / port_area
 
 
 def calculate_cone_excursion(core_results, w):
