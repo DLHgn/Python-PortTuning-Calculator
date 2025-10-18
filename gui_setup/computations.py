@@ -138,7 +138,7 @@ def calculate_port_velocity(core_results, port_area, s, lmap):
     zlmap = s * lmap
 
     # Calculates RMS port velocity
-    ilmap = pd / zlamp
+    ilmap = pd / zlmap
 
     # Returns the peak velocity (RMS * sqrt(s))/area
     return (ilmap * math.sqrt(2)) / port_area
