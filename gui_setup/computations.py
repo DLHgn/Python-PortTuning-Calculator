@@ -587,7 +587,7 @@ def calculate_and_set_zb():
     return 1/(__s * __ccab + (1 / __ral) + (1/(__s * __lmap)))
 
 
-def calculate_and_set_pd():
+#def calculate_and_set_pd():
     # This function will calculate and set Pd which represents the voltage across loop mesh of the driver acoustical and
     # box portion of the circuit model
 
@@ -648,7 +648,7 @@ def calculate_and_set_pd():
     return x1/(x2+x3+x4+x5+x6+x7+x8+x9+re)
 
 
-def calculate_and_set_i():
+#def calculate_and_set_i():
     # This function will calculate and set I which represents the loop mesh current of the amplifier/driver
     # electrical portions of the circuit model.
 
@@ -710,7 +710,7 @@ def calculate_and_set_i():
     return (y1 + y2 + y3 + vg)/(y4 + y5 + y6 + y7 + y8 + y9 + re)
 
 
-def calculate_and_set_u():
+#def calculate_and_set_u():
     # This function will calculate and set U which represents the loop mesh current of the driver mechanical
     # portions of the circuit model.
 
@@ -762,26 +762,83 @@ def calculate_and_set_u():
 
     return ((z1 - z2) * z3)/(z4 + z5 + 1)
 
+def calculate_pd_i_u():
+    # This is a function created by Gemini to help reduce algebraic errors. It replaces the functions to calculate
+    # Pd, U, and I.
+
+    if __s is None:
+        calculate_and_set_s()
+    if __ccab is None:
+        calculate_and_set_ccab()
+    if __ral is None:
+        calculate_and_set_ral()
+    if __lmap is None:
+        calculate_and_set_lmap()
+
+    cms = convert_cms()
+    mms = convert_mms()
+    le = convert_le()
+    re = get_re()
+    rms = get_rms()
+    bl = get_bl()
+    sd = convert_sd()
+    vg = get_vg()
+
+    #Calc total acoustical impedance of the enclosure (Zb)
+    # This is the parallel combination of the box compliance, losses, and port mass.
+    zb = 1 / (__s * __ccab + (1 / __ral) + (1 / (__s * __lmap)))
+
+    # Define the fundamental impedances of each part of the circuit model
+    # Z_mech represents the impedance of the driver's mechanical components (mass, suspension)
+    z_mech = rms + __s * mms + 1 / (__s * cms)
+
+    # Z_elec is the simple electrical impedance of the voice coil
+    z_elec = re + __s * le
+
+    # Combine the fundamental impedances to find the total input impedance (Zin)
+    # This term represents how the mechanical parts (Z_mech) look from the electrical side
+    z_mech_total = z_mech + sd ** 2 * zb
+
+    # The total impedance the amplifier sees is the sum of all parts
+    zin = z_elec + (bl ** 2 / z_mech_total)
+
+    # With Zin calculated, we can now reliably solve for the primary unknowns (I, U, Pd)
+    # Current (I) from the amplifier
+    i = vg / zin
+
+    # Pressure (Pd) inside the enclosure
+    pd = i * (bl * sd * zb) / (z_mech + sd ** 2 * zb)
+
+    # Velocity (U) of the driver cone
+    u = (bl * i - sd * pd) / z_mech
+
+    return {
+        "zin": zin,
+        "i": i,
+        "u": u,
+        "pd": pd,
+        "zb": zb
+    }
 
 def calculate_zccab():
     # This function will calculate and return Zccab which represents the impedance across the Ccab component of the
     # circuit model. Zccab is returned in rectangular coordinates
 
-    # If __w wasn't set, calculate and set __w
-    if __w is None:
-        calculate_and_set_w()
+    # If __s wasn't set, calculate and set __s
+    if __s is None:
+        calculate_and_set_s()
     # If __ccab wasn't set, calculate and set __ccab
     if __ccab is None:
         calculate_and_set_ccab()
 
     # AC resistance of the capacitor
-    zccab = 1/(__w * __ccab)
+    test = 1/(__s * __ccab)
 
-    print("\n", "zccab (polar): ", cmath.polar(zccab))
-    print("zccab: ", zccab)
+    print("\n", "zccab (polar): ", cmath.polar(test))
+    print("zccab: ", test)
 
-    # impedance of capacitors is represented as (xccab < -90). -90 = -PI/2 radians
-    return 1/(__w * __ccab)
+    #  AC resistance of the capacitor. impedance of capacitors is represented as (xccab < -90). -90 = -PI/2 radians
+    return 1/(__s * __ccab)
 
 
 def calculate_iccab():
@@ -789,38 +846,35 @@ def calculate_iccab():
     # circuit model. Iccab is returned in rectangular coordinates.
     # e represents the voltage and zccab represents impedance
 
-    e = calculate_and_set_pd()
+    e = calculate_pd_i_u()
     zccab = calculate_zccab()
 
-    test = e / zccab
+    test = e["pd"] / zccab
     print("\n", "---Calculating Iccab")
     print("zccab: ", zccab)
     print("iccab (polar): ", cmath.polar(test))
     print("iccab: ", test)
 
-    return e / zccab
+    return e["pd"] / zccab
 
 
 def calculate_zlmap():
     # This function will calculate and return Zlmap which represents the impedance across the Lmap component of the
     # circuit model. Lmap is returned in rectangular coordinates.
 
-    # If __w wasn't set, calculate and set __w
-    if __w is None:
-        calculate_and_set_w()
+    # If __s wasn't set, calculate and set __s
+    if __s is None:
+        calculate_and_set_s()
     # If __lmap wasn't set, calculate and set __lmap
     if __lmap is None:
         calculate_and_set_lmap()
 
-    # AC resistance of an inductor
-    zlmap = __w * __lmap
-
-    test = __w * __lmap
+    test = __s * __lmap
     print("zlmap (polar): ", cmath.polar(test))
-    print("zlmap: ", zlmap)
+    print("zlmap: ", test)
 
-    # impedance of inductors is represented as (xlmap < 90). 90 = PI/2 radians
-    return cmath.rect(zlmap, (math.pi/2))
+    # AC resistance of an inductor. impedance of inductors is represented as (zlmap < 90). 90 = PI/2 radians
+    return __s * __lmap
 
 
 def calculate_ilmap():
@@ -828,16 +882,16 @@ def calculate_ilmap():
     # circuit model. Ilmap is returned in rectangular coordinates.
     # e represents voltage and zlmap represents impedance
 
-    e = calculate_and_set_pd()
+    e = calculate_pd_i_u()
     zlmap = calculate_zlmap()
 
-    test = e / zlmap
+    test = e["pd"] / zlmap
     print("\n", "---Calculating ILmap")
     print("zlmap: ", zlmap)
     print("ilmap (polar): ", cmath.polar(test))
     print("ilmap: ", test)
 
-    return e / zlmap
+    return e["pd"] / zlmap
 
 
 def calculate_port_velocity():
@@ -860,16 +914,16 @@ def calculate_port_velocity():
 def calculate_cone_excursion():
     # This function calculates and returns cone excursion in m
 
-    u = calculate_and_set_u()
+    u_dict = calculate_pd_i_u()
 
-    test = (math.sqrt(2) * u) / __w
+    test = (math.sqrt(2) * u_dict["u"]) / __w
 
     print("\n", "---Calculating Cone Excursion")
-    print("U: ", u)
+    print("U: ", u_dict["u"])
     print("cone_ex (polar): ", cmath.polar(test))
     print("cone_ex: ", test)
 
-    return (math.sqrt(2) * u) / __w
+    return (math.sqrt(2) * u_dict["u"]) / __w
 
 
 def calculate_frequency_response():
