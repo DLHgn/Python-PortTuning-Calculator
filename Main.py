@@ -93,6 +93,6 @@ submitBtn.btn_setup(mainWindow.window, pad)
 # setup test frequency
 frequency = gui_setup.gui_items.Item("test frequency", 0, 10)
 frequency.item_setup(mainWindow.window, pad, txtfield_size, "Hz")
-data_manager.get_frequency()
+data_manager.set_frequency(frequency)
 
 mainWindow.window.mainloop()

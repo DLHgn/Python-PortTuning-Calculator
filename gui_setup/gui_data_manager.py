@@ -157,6 +157,12 @@ def set_port_tuning_entry():
     global __port_tuning
     __port_tuning.set_txtfield(port_tuning_calculation())
 
+def set_frequency(frequency):
+    # This function takes the frequency currently being calculated on and setting it the global variable __frequency
+    # to be used by the below functions
+    global __frequency
+    __frequency = frequency
+
 # Below we have conversion functions. These also serve the purpose of getting and returning the value in the textfield
 def convert_port_area_in():
     # convert_port_area_in will, if necessary, convert the given value in the port_area entry object to square inches
