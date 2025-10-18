@@ -424,10 +424,9 @@ def get_stop_freq():
 
 # Master function which creates a dictionary of GUI values
 def gather_all_inputs():
-    """
-    Gathers all values from the GUI, converts them,
-    and returns them in a simple dictionary.
-    """
+    # Gathers all values from the GUI, converts them,
+    # and returns them in a simple dictionary.
+
     params = {
         're': get_re(),
         'rms': get_rms(),
