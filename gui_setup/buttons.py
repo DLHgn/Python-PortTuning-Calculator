@@ -37,23 +37,31 @@ class Btn(object):
         # This function handles the button event. Differentiates between a button click used to determine units of given
         # data and the submit button that starts the calculations.
         if self.btntxt == 'Submit':
-            # Gather all inputs from the GUI into a simple dictionary
+
+            # Run Single-Frequency Analysis
+            print("--- Running Single-Frequency Analysis ---")
             params = data_manager.gather_all_inputs()
-
-            # Get the single frequency to test
             freq = data_manager.get_frequency()
-
-            # Run the analysis with one function call
             results = computations.run_full_analysis_at_frequency(freq, params)
 
-            # Print the final results (for debugging)
-            print("--- Analysis Complete ---")
-            print(f"Frequency: {results['frequency']} Hz")
+            # Print the results for the single frequency
+            print(f"Frequency: {results['frequency']:.2f} Hz")
             print(f"Input Impedance: {abs(results['zin']):.2f} Ohms")
             print(f"Cone Excursion: {results['cone_excursion_mm']:.2f} mm")
             print(f"Port Velocity: {results['port_velocity_ms']:.2f} m/s")
+            print("------------------------------------------")
 
-        #this elif is added for test data purposes. Can be removed once not needed
+            # Run Graph Analysis
+            start_freq = data_manager.get_start_freq()
+            stop_freq = data_manager.get_stop_freq()
+            canvas = data_manager.get_graph_canvas()
+
+            if canvas:
+                computations.plot_impedance_curve(canvas, params, start_freq, stop_freq)
+            else:
+                print("Error: Graph canvas not found.")
+
+        # This elif is added for test data purposes. Can be removed once not needed
         elif self.btntxt == 'Load Test':
             data_manager.load_test_values()
 

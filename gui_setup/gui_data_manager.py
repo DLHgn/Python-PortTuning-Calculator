@@ -21,6 +21,7 @@ __bl = None
 __sd = None
 __vg = None
 __frequency = None
+__graph_canvas = None
 
 # Below are set functions that stores the given gui_items.Item object into the global variable. This allows for further
 # manipulation and value storage. Included with these are corresponding get functions if there is no conversion
@@ -165,6 +166,19 @@ def set_frequency(frequency):
     # to be used by the below functions
     global __frequency
     __frequency = frequency
+
+def set_graph_canvas(canvas):
+    # Stores the main Matplotlib canvas object
+    global __graph_canvas
+    __graph_canvas = canvas
+
+def set_start_freq(value):
+    global __start_freq
+    __start_freq = value
+
+def set_stop_freq(value):
+    global __stop_freq
+    __stop_freq = value
 
 # Below we have conversion functions. These also serve the purpose of getting and returning the value in the textfield
 def convert_port_area_in():
@@ -389,6 +403,24 @@ def get_frequency():
         return float(__frequency.get_txtfield())
     except (ValueError, AttributeError):
         return 30.02 # Default test frequency
+
+def get_graph_canvas():
+    # Returns the main Matplotlib canvas object
+    return __graph_canvas
+
+def get_start_freq():
+    try:
+        # Get value and convert to integer
+        return int(float(__start_freq.get_txtfield()))
+    except (ValueError, AttributeError):
+        return 20 # Default 20 Hz
+
+def get_stop_freq():
+    try:
+        # Get value and convert to integer
+        return int(float(__stop_freq.get_txtfield()))
+    except (ValueError, AttributeError):
+        return 100 # Default 100 Hz
 
 # Master function which creates a dictionary of GUI values
 def gather_all_inputs():

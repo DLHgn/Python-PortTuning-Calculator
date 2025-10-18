@@ -1,6 +1,10 @@
 import gui_setup
 import gui_setup.gui_data_manager as data_manager
 from tkinter import ttk  # Import the Themed Tkinter widgets
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, NavigationToolbar2Tk
+)
 
 pad = 5
 txtfield_size = 8
@@ -27,6 +31,30 @@ notebook.add(input_frame, text='Inputs')
 # ---
 graph_frame = ttk.Frame(notebook)
 notebook.add(graph_frame, text='Graphs')
+
+# --- Building Impedance Graph ---
+# Create a figure
+fig = Figure(figsize=(6, 4), dpi=100)
+
+# Add a default plot area (we'll draw on this later)
+ax = fig.add_subplot(111)
+ax.grid(True, which="both", ls="--", c='0.7') # Add a grid
+fig.tight_layout()
+
+# Create the Tkinter canvas object
+canvas = FigureCanvasTkAgg(fig, master=graph_frame)
+canvas.draw()
+
+# Create the navigation toolbar
+toolbar = NavigationToolbar2Tk(canvas, graph_frame, pack_toolbar=False)
+toolbar.update()
+
+# Pack the toolbar and canvas into the Graphs tab
+toolbar.pack(side="bottom", fill="x")
+canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
+
+# Tell the data manager where the canvas is
+data_manager.set_graph_canvas(canvas)
 
 # ---
 # Organize the "Inputs" Tab with Labelframes
@@ -125,6 +153,17 @@ submit.btn_setup(controls_frame, pad)
 loadTest = gui_setup.buttons.Btn(3, 0, "Load Test")
 loadTest.btn_setup(controls_frame, pad)
 
+# Start freq for graph
+start_freq = gui_setup.gui_items.Item("Graph Start Freq", 0, 1)
+start_freq.item_setup(controls_frame, pad, txtfield_size, "Hz")
+start_freq.insert_default_txtfield("20") # Add default text
+data_manager.set_start_freq(start_freq)
 
-# --- 6. Run the main application ---
+# End freq for graph
+stop_freq = gui_setup.gui_items.Item("Graph Stop Freq", 2, 1)
+stop_freq.item_setup(controls_frame, pad, txtfield_size, "Hz")
+stop_freq.insert_default_txtfield("100") # Add default text
+data_manager.set_stop_freq(stop_freq)
+
+# Run the main application
 mainWindow.window.mainloop()

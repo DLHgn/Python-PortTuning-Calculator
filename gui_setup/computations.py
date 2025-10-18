@@ -1,7 +1,8 @@
 # This new computations file will only be in charge of math functionality
 import math
 import cmath
-
+import matplotlib.pyplot as plt
+import numpy as np
 
 def run_full_analysis_at_frequency(frequency, params):
    # This is the main controller function for this file.
@@ -148,3 +149,41 @@ def calculate_cone_excursion(core_results, w):
     # Calculates cone excursion from core results
     u = core_results['u']
     return (math.sqrt(2) * u) / w
+
+
+def plot_impedance_curve(canvas, params, start_freq, stop_freq, step=1):
+    # Loops through a frequency range, calls the main analysis function,
+    # and draws the result on the provided Tkinter canvas.
+
+    print(f"Generating impedance plot from {start_freq} Hz to {stop_freq} Hz...")
+
+    # Create the list of frequencies to test
+    frequencies = np.arange(start_freq, stop_freq + 1, step)
+
+    impedance_magnitudes = []
+
+    # Loop and calculate
+    for freq in frequencies:
+        results = run_full_analysis_at_frequency(freq, params)
+        impedance_magnitudes.append(abs(results["zin"]))
+
+    # Get the figure and axes from the canvas
+    fig = canvas.figure
+    fig.clear()
+    ax = fig.add_subplot(111)
+
+    # Draw the new plot on the axes
+    ax.plot(frequencies, impedance_magnitudes)
+    ax.set_title("System Impedance")
+    ax.set_xlabel("Frequency (Hz)")
+    ax.set_ylabel("Impedance (Ohms)")
+    ax.grid(True, which="both", ls="--", c='0.7')
+    ax.set_yscale('log')
+    # Auto-set x-ticks based on range, or set manually
+    ax.set_xticks(np.linspace(start_freq, stop_freq, num=10, dtype=int))
+    fig.tight_layout()
+
+    # Redraw the canvas
+    canvas.draw()
+
+    print("Plot updated.")
