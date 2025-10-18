@@ -1,4 +1,5 @@
 import gui_setup.computations
+import gui_data_manager
 import gui_setup.gui_items
 import gui_setup.window_text
 import gui_setup.window_setup
