@@ -1,5 +1,6 @@
 from tkinter.ttk import *
-import gui_setup.computations
+import gui_setup.computations as computations
+import gui_setup.gui_data_manager as data_manager
 import gui_setup.gui_items
 
 
@@ -36,27 +37,22 @@ class Btn(object):
         # This function handles the button event. Differentiates between a button click used to determine units of given
         # data and the submit button that starts the calculations.
         if self.btntxt == 'Submit':
-            # triggers port tuning computations and sets it to an Entry object
-            gui_setup.computations.set_port_tuning_entry()
-            # below is for testing purposes
-            gui_setup.computations.calculate_and_set_wb()
-            gui_setup.computations.calculate_and_set_w()
-            gui_setup.computations.calculate_and_set_s()
-            gui_setup.computations.calculate_and_set_ccab()
-            gui_setup.computations.calculate_and_set_ral()
-            gui_setup.computations.calculate_and_set_lmap()
-            gui_setup.computations.calculate_and_set_zb()
-            #gui_setup.computations.calculate_and_set_pd()
-            #gui_setup.computations.calculate_and_set_i()
-            #gui_setup.computations.calculate_and_set_u()
-            gui_setup.computations.calculate_pd_i_u()
-            gui_setup.computations.calculate_zccab()
-            gui_setup.computations.calculate_iccab()
-            gui_setup.computations.calculate_zlmap()
-            gui_setup.computations.calculate_ilmap()
-            gui_setup.computations.calculate_port_velocity()
-            gui_setup.computations.calculate_cone_excursion()
-            gui_setup.computations.calculate_frequency_response()
+            # Gather all inputs from the GUI into a simple dictionary
+            params = data_manager.gather_all_inputs()
+
+            # Get the single frequency to test
+            freq = data_manager.get_frequency()
+
+            # Run the analysis with one function call
+            results = computations.run_full_analysis_at_frequency(freq, params)
+
+            # Print the final results (for debugging)
+            print("--- Analysis Complete ---")
+            print(f"Frequency: {results['frequency']} Hz")
+            print(f"Input Impedance: {abs(results['zin']):.2f} Ohms")
+            print(f"Cone Excursion: {results['cone_excursion_mm']:.2f} mm")
+            print(f"Port Velocity: {results['port_velocity_ms']:.2f} m/s")
+
         if self.clickCount < self.num_args:
             # cycles through given button text if not at end of list
             self.btn.configure(text=self.args[0][self.clickCount])
