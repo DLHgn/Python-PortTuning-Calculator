@@ -1,6 +1,9 @@
 # Creating this file to handle the storing/retrieving of GUI objects.
 import math
 
+#this import is used for setting test data and can be removed/commented out when not needed
+from . import test_data
+
 # These global variables are meant to store the gui_items objects for use in the calculations. These are to only be used
 # by this module
 __port_area = None
@@ -410,3 +413,56 @@ def gather_all_inputs():
         'c': 343.68   # Constant
     }
     return params
+
+# This function is used for setting test data. Can be removed when no longer needed
+def load_test_values():
+    # Loads all test values from the test_data module
+    # and populates the GUI fields.
+
+    data = test_data.test_values
+
+    print("Loading test values...")
+
+    # Check if GUI items exist before setting
+    try:
+        if __re:
+            __re.set_txtfield(data['re'])
+        if __le:
+            __le.set_txtfield(data['le'])
+            __le.set_btn_text(data['le_unit'])
+        if __bl:
+            __bl.set_txtfield(data['bl'])
+            __bl.set_btn_text(data['bl_unit'])
+        if __sd:
+            __sd.set_txtfield(data['sd'])
+            __sd.set_btn_text(data['sd_unit'])
+        if __cms:
+            __cms.set_txtfield(data['cms'])
+            __cms.set_btn_text(data['cms_unit'])
+        if __mms:
+            __mms.set_txtfield(data['mms'])
+            __mms.set_btn_text(data['mms_unit'])
+        if __rms:
+            __rms.set_txtfield(data['rms'])
+            __rms.set_btn_text(data['rms_unit'])
+        if __vg:
+            __vg.set_txtfield(data['vg'])
+        if __net_volume:
+            __net_volume.set_txtfield(data['vb'])
+            __net_volume.set_btn_text(data['vb_unit'])
+        if __port_area:
+            __port_area.set_txtfield(data['port_area'])
+            __port_area.set_btn_text(data['port_area_unit'])
+        if __port_length:
+            __port_length.set_txtfield(data['port_length'])
+            __port_length.set_btn_text(data['port_length_unit'])
+        if __port_tuning:
+            __port_tuning.set_txtfield(data['port_tuning'])
+        if __frequency:
+            __frequency.set_txtfield(data['frequency'])
+        if __end_correction:
+            __end_correction.set_cmb_text(data['end_correction'])
+
+        print("Test values loaded successfully.")
+    except Exception as e:
+        print(f"Error loading test values: {e}")

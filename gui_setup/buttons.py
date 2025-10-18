@@ -53,6 +53,10 @@ class Btn(object):
             print(f"Cone Excursion: {results['cone_excursion_mm']:.2f} mm")
             print(f"Port Velocity: {results['port_velocity_ms']:.2f} m/s")
 
+        #this elif is added for test data purposes. Can be removed once not needed
+        elif self.btntxt == 'Load Test':
+            data_manager.load_test_values()
+
         if self.clickCount < self.num_args:
             # cycles through given button text if not at end of list
             self.btn.configure(text=self.args[0][self.clickCount])

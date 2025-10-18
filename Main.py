@@ -88,6 +88,11 @@ data_manager.set_vg(vg)
 submitBtn = gui_setup.gui_items.Item("Submit", 1, 9)
 submitBtn.btn_setup(mainWindow.window, pad)
 
+# This is for setting test data
+# setup load test button
+loadTest = gui_setup.buttons.Btn(3, 10, "Load Test")
+loadTest.btn_setup(mainWindow.window, pad)
+
 # The below fields are strictly for testing purposes and should be deleted once equations are tested
 
 # setup test frequency

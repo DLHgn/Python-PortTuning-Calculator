@@ -83,3 +83,22 @@ class Item(object):
         #@param window is a tkinter Window that the button will be added to
         #@param pad is an integer that will be the padding (same x and y) to go around the button
         self.button.btn_setup(window, pad)
+
+    # ----
+    # The following are for setting test data quickly. Comment them out to get rid of this testing function
+    # ----
+
+    def set_txtfield(self, text_to_set):
+        # Clears the current entry and inserts new text
+        self.txtField.delete(0, 'end')
+        self.txtField.insert(0, str(text_to_set))
+
+    def set_btn_text(self, text_to_set):
+        # Sets the text of the associated button, if it exists
+        if hasattr(self, 'button') and hasattr(self.button, 'btn'):
+            self.button.btn.configure(text=text_to_set)
+
+    def set_cmb_text(self, text_to_set):
+        # Sets the value of the associated combobox, if it exists
+        if hasattr(self, 'cmb') and hasattr(self.cmb, 'cmb'):
+            self.cmb.cmb.set(text_to_set)
