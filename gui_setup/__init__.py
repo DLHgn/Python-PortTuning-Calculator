@@ -1,6 +1,7 @@
-import gui_setup.computations
-import gui_setup.gui_data_manager
-import gui_setup.gui_items
-import gui_setup.window_text
-import gui_setup.window_setup
-import gui_setup.buttons
+from . import computations
+from . import gui_data_manager
+from . import gui_items
+from . import window_text
+from . import window_setup
+from . import buttons
+from . import test_data
