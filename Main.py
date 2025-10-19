@@ -132,7 +132,8 @@ endCorrection.item_setup(box_frame, pad, txtfield_size, True, "One Flanged End",
 data_manager.set_end_correction(endCorrection)
 
 numPorts = gui_setup.gui_items.Item("Number of Ports", 0, 4)
-numPorts.item_setup(box_frame, pad, txtfield_size,1)
+numPorts.item_setup(box_frame, pad, txtfield_size, 'no name', use_btn=False)
+numPorts.insert_default_txtfield("1")
 data_manager.set_number_of_ports(numPorts)
 
 portTuning = gui_setup.gui_items.Item("Port Tuning", 0, 5)
