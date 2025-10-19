@@ -137,7 +137,8 @@ numPorts.insert_default_txtfield("1")
 data_manager.set_number_of_ports(numPorts)
 
 portTuning = gui_setup.gui_items.Item("Port Tuning", 0, 5)
-portTuning.item_setup(box_frame, pad, txtfield_size, "Hz")
+portTuning.item_setup(box_frame, pad, txtfield_size, 'no name', use_btn=False)
+portTuning.txtField.configure(state='readonly') # Make it read-only
 data_manager.set_port_tuning(portTuning)
 
 

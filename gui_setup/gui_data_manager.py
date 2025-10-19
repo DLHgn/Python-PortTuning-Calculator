@@ -180,6 +180,11 @@ def set_stop_freq(value):
     global __stop_freq
     __stop_freq = value
 
+def set_port_tuning_output(value):
+    # Sets the read-only Port Tuning field
+    if __port_tuning:
+        __port_tuning.set_output_text(f"{value:.2f} Hz")
+
 # Below we have conversion functions. These also serve the purpose of getting and returning the value in the textfield
 def convert_port_area_in():
     # convert_port_area_in will, if necessary, convert the given value in the port_area entry object to square inches
@@ -299,21 +304,21 @@ def convert_port_length_in():
     elif unit == 'mm':
         return float(__port_length.get_txtfield()) * .0393701
 
-def convert_port_length_cm():
-    # convert_port_length_cm will, if necessary, convert the given value in the port_length entry object to centimeters
-    # returns given conversion in float data type
+def convert_port_length_m():
+    # Converts port length to meters
     global __port_length
     unit = __port_length.get_btn()
-    if unit == 'cm':
-        return float(__port_length.get_txtfield())
+    val = float(__port_length.get_txtfield())
+    if unit == 'm':
+        return val
     elif unit == 'in':
-        return float(__port_length.get_txtfield()) * 2.54
+        return val * 0.0254
+    elif unit == 'cm':
+        return val * 0.01
     elif unit == 'ft':
-        return float(__port_length.get_txtfield()) * 91.44
-    elif unit == 'm':
-        return float(__port_length.get_txtfield()) * 100
+        return val * 0.3048
     elif unit == 'mm':
-        return float(__port_length.get_txtfield()) * .1
+        return val * 0.001
 
 def convert_end_correction():
     # convert_end_correction will assign value based on selected entry
@@ -404,6 +409,25 @@ def get_frequency():
     except (ValueError, AttributeError):
         return 30.02 # Default test frequency
 
+def get_end_correction():
+    # Returns the numeric end correction factor
+    global __end_correction
+    value = __end_correction.get_cmb()
+    if value == '3 Common Walls':
+        return 2.227
+    elif value == '2 Common Walls':
+        return 1.728
+    elif value == '1 Common Wall':
+        return 1.23
+    elif value == 'One Flanged End':
+        return 0.732
+    elif value == 'Both Flanged Ends':
+        return 0.85
+    elif value == 'Both Free Ends':
+        return 0.614
+    else: # Default
+        return 0.823
+
 def get_graph_canvas():
     # Returns the main Matplotlib canvas object
     return __graph_canvas
@@ -438,7 +462,8 @@ def gather_all_inputs():
         'sd': convert_sd(),
         'vb': convert_net_volume_meters(),
         'ap': convert_port_area_m(),
-        'fb': get_port_tuning_hz(),
+        'lp': convert_port_length_m(),
+        'end_corr': get_end_correction(),
         'ql': 10,     # Constant
         'p0': 1.20095, # Constant
         'c': 343.68   # Constant
