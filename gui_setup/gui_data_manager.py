@@ -157,9 +157,9 @@ def set_port_tuning(value):
 
 def set_port_tuning_entry():
     # set_port_tuning_entry sets the port_tuning entry object to the output of port_tuning_calculation() using the
-    # function Item.set_txtfield()
+    # function Item.set_output_text()
     global __port_tuning
-    __port_tuning.set_txtfield(port_tuning_calculation())
+    __port_tuning.set_output_text(port_tuning_calculation())
 
 def set_frequency(frequency):
     # This function takes the frequency currently being calculated on and setting it the global variable __frequency
@@ -457,42 +457,46 @@ def load_test_values():
     # Check if GUI items exist before setting
     try:
         if __re:
-            __re.set_txtfield(data['re'])
+            __re.set_input_text(data['re'])
         if __le:
-            __le.set_txtfield(data['le'])
+            __le.set_input_text(data['le'])
             __le.set_btn_text(data['le_unit'])
         if __bl:
-            __bl.set_txtfield(data['bl'])
+            __bl.set_input_text(data['bl'])
             __bl.set_btn_text(data['bl_unit'])
         if __sd:
-            __sd.set_txtfield(data['sd'])
+            __sd.set_input_text(data['sd'])
             __sd.set_btn_text(data['sd_unit'])
         if __cms:
-            __cms.set_txtfield(data['cms'])
+            __cms.set_input_text(data['cms'])
             __cms.set_btn_text(data['cms_unit'])
         if __mms:
-            __mms.set_txtfield(data['mms'])
+            __mms.set_input_text(data['mms'])
             __mms.set_btn_text(data['mms_unit'])
         if __rms:
-            __rms.set_txtfield(data['rms'])
+            __rms.set_input_text(data['rms'])
             __rms.set_btn_text(data['rms_unit'])
         if __vg:
-            __vg.set_txtfield(data['vg'])
+            __vg.set_input_text(data['vg'])
         if __net_volume:
-            __net_volume.set_txtfield(data['vb'])
+            __net_volume.set_input_text(data['vb'])
             __net_volume.set_btn_text(data['vb_unit'])
         if __port_area:
-            __port_area.set_txtfield(data['port_area'])
+            __port_area.set_input_text(data['port_area'])
             __port_area.set_btn_text(data['port_area_unit'])
         if __port_length:
-            __port_length.set_txtfield(data['port_length'])
+            __port_length.set_input_text(data['port_length'])
             __port_length.set_btn_text(data['port_length_unit'])
         if __port_tuning:
-            __port_tuning.set_txtfield(data['port_tuning'])
+            __port_tuning.set_input_text(data['port_tuning'])
         if __frequency:
-            __frequency.set_txtfield(data['frequency'])
+            __frequency.set_input_text(data['frequency'])
         if __end_correction:
             __end_correction.set_cmb_text(data['end_correction'])
+        if __start_freq:
+            __start_freq.set_input_text("20")
+        if __stop_freq:
+            __stop_freq.set_input_text("100")
 
         print("Test values loaded successfully.")
     except Exception as e:

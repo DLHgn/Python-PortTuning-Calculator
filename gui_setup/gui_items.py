@@ -33,7 +33,7 @@ class Item(object):
         #@param text is a string that will be the default text of the Entry object
         self.txtField.insert(0, text)
 
-    def set_txtfield(self, value):
+    def set_output_text(self, value):
         #Sets a provided value into a readonly Entry.
         #@param value will be set into the Entry object as a string
         self.txtField.configure(state='normal')  #must convert to normal state in order to alter
@@ -88,7 +88,7 @@ class Item(object):
     # The following are for setting test data quickly. Comment them out to get rid of this testing function
     # ----
 
-    def set_txtfield(self, text_to_set):
+    def set_input_text(self, text_to_set):
         # Clears the current entry and inserts new text
         self.txtField.delete(0, 'end')
         self.txtField.insert(0, str(text_to_set))
