@@ -70,6 +70,37 @@ class CursorAnnotation(object):
 
         self.canvas.draw_idle()
 
+def calculate_port_diameter(value):
+    # Converts port area in cm^2 to diameter in cm for DIY audio equation
+    return 2 * math.sqrt(value / math.pi)
+
+
+def port_tuning_calculation(params):
+    # Calculates port tuning freq (fb) using the averaged formula.
+    # Uses raw values from the params dictionary.
+
+    # Get all the raw values from the params dict
+    number_of_ports = params['number_of_ports']
+    port_area_in = params['port_area_in'] * number_of_ports
+    port_area_cm = params['port_area_cm']
+    net_volume_in = params['net_volume_in']
+    net_volume_l = params['net_volume_l']
+    port_length_in = params['port_length_in']
+    port_length_cm = params['port_length_cm']
+    end_correction = params['end_correction']
+
+    port_diameter = calculate_port_diameter(port_area_cm)
+
+    # JL Audio equation
+    port_tuning1 = 0.159 * math.sqrt(
+        port_area_in * 1.84E8 / (net_volume_in * (port_length_in + end_correction * math.sqrt(port_area_in))))
+
+    # DIY Audio equation
+    port_tuning2 = (153.501 * port_diameter * math.sqrt(number_of_ports)) / (
+                (math.sqrt(net_volume_l)) * (math.sqrt(port_length_cm + end_correction * port_diameter)))
+
+    return (port_tuning1 + port_tuning2) / 2
+
 def run_full_analysis_at_frequency(frequency, params):
    # This is the main controller function for this file.
    # As the name suggests, it will run all computations for a given frequency
@@ -89,20 +120,22 @@ def run_full_analysis_at_frequency(frequency, params):
     # s represents the common abbreviation for j*w where j in an imaginary number.
     s = 1j * w
 
-    # Calculate Ccab (box compliance)
+    # First, calculate fb using your averaged formula
+    fb = port_tuning_calculation(params)
+
+    # Now, use fb to calculate the rest of the physics components
+
+    # wb represents angular box tuning frequency as 2*PI*port_tuning
+    wb = 2.0 * math.pi * fb
+
+    # ccab represents the acoustic compliance of the enclosure volume
     ccab = calculate_ccab(params['vb'], params['p0'], params['c'])
 
-    # Calculate Lmap (port mass) from physical dimensions
-    port_diam = 2 * math.sqrt(params['ap'] / math.pi)
-    eff_port_length = params['lp'] + (params['end_corr'] * port_diam)
-    lmap = (params['p0'] * eff_port_length) / params['ap']
-
-    # Calculate fb (tuning freq) and wb (angular freq)
-    fb = 1 / (2 * math.pi * math.sqrt(lmap * ccab))
-    wb = 2 * math.pi * fb
-
-    # Calculate Ral (losses) based on the new wb
+    # ral represents the acoustic resistance modeling air leak
     ral = calculate_ral(params['ql'], wb, ccab)
+
+    # lmap represents angular frequency as 2*PI*frequency
+    lmap = calculate_lmap(wb, ccab)
 
     # ----
     # Run the core physics simulation
@@ -114,7 +147,7 @@ def run_full_analysis_at_frequency(frequency, params):
     # Use core results to find final values
     # ----
 
-    port_vel = calculate_port_velocity(core_results, params['ap'], s, lmap)
+    port_vel = calculate_port_velocity(core_results, params['port_area_cm'] / 10000, s, lmap)
     cone_exc = calculate_cone_excursion(core_results, w)
 
     # ----

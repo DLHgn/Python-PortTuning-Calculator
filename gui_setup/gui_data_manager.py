@@ -320,6 +320,23 @@ def convert_port_length_m():
     elif unit == 'mm':
         return val * 0.001
 
+def convert_port_length_cm():
+    # convert_port_length_cm will, if necessary, convert the given value in the port_length entry object to centimeters
+    # convert_port_length_cm will, if necessary, convert the given value in the port_length entry object to centimeters
+    # returns given conversion in float data type
+    global __port_length
+    unit = __port_length.get_btn()
+    if unit == 'cm':
+        return float(__port_length.get_txtfield())
+    elif unit == 'in':
+        return float(__port_length.get_txtfield()) * 2.54
+    elif unit == 'ft':
+        return float(__port_length.get_txtfield()) * 91.44
+    elif unit == 'm':
+        return float(__port_length.get_txtfield()) * 100
+    elif unit == 'mm':
+        return float(__port_length.get_txtfield()) * .1
+
 def convert_end_correction():
     # convert_end_correction will assign value based on selected entry
     # returns given assigned value in float data type
@@ -428,6 +445,16 @@ def get_end_correction():
     else: # Default
         return 0.823
 
+def get_number_of_ports():
+    # Gets the number of ports, defaulting to 1
+    try:
+        if __number_of_ports.get_txtfield():
+            return int(__number_of_ports.get_txtfield())
+        else:
+            return 1
+    except (ValueError, AttributeError):
+        return 1
+
 def get_graph_canvas():
     # Returns the main Matplotlib canvas object
     return __graph_canvas
@@ -452,6 +479,7 @@ def gather_all_inputs():
     # and returns them in a simple dictionary.
 
     params = {
+        # Core driver params
         're': get_re(),
         'rms': get_rms(),
         'bl': get_bl(),
@@ -460,13 +488,23 @@ def gather_all_inputs():
         'cms': convert_cms(),
         'mms': convert_mms(),
         'sd': convert_sd(),
-        'vb': convert_net_volume_meters(),
-        'ap': convert_port_area_m(),
-        'lp': convert_port_length_m(),
-        'end_corr': get_end_correction(),
-        'ql': 10,     # Constant
-        'p0': 1.20095, # Constant
-        'c': 343.68   # Constant
+
+        # Physics constants
+        'ql': 10,  # Constant
+        'p0': 1.20095,  # Constant
+        'c': 343.68,  # Constant
+
+        # Raw box/port values for tuning calculation
+        'vb': convert_net_volume_meters(), # Used for Ccab
+        'number_of_ports': get_number_of_ports(),
+        'port_area_in': convert_port_area_in(),
+        'port_area_cm': convert_port_area_cm(),
+        'net_volume_in': convert_net_volume_in(),
+        'net_volume_l': convert_net_volume_liters(),
+        'port_length_in': convert_port_length_in(),
+        'port_length_cm': convert_port_length_cm(),
+        'end_correction': get_end_correction()
+
     }
     return params
 
