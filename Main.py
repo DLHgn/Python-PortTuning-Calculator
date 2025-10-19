@@ -11,7 +11,7 @@ txtfield_size = 8
 
 # setup main window
 # We make it larger to accommodate the new layout
-mainWindow = gui_setup.window_setup.Window(800, 500)
+mainWindow = gui_setup.window_setup.Window()
 mainWindow.window_setup("Port Tuning Calculator")
 
 # ---
@@ -164,6 +164,28 @@ stop_freq = gui_setup.gui_items.Item("Graph Stop Freq", 2, 1)
 stop_freq.item_setup(controls_frame, pad, txtfield_size, "Hz")
 stop_freq.insert_default_txtfield("100") # Add default text
 data_manager.set_stop_freq(stop_freq)
+
+# ----
+# Centering Logic
+# ----
+
+# Force tkinter to update and calculate the window's required size
+mainWindow.window.update_idletasks()
+
+# Get the calculated width and height
+window_width = mainWindow.window.winfo_width()
+window_height = mainWindow.window.winfo_height()
+
+# Get the screen dimensions
+screen_width = mainWindow.window.winfo_screenwidth()
+screen_height = mainWindow.window.winfo_screenheight()
+
+# Calculate the centered coordinates
+x_coordinate = int((screen_width / 2) - (window_width / 2))
+y_coordinate = int((screen_height / 2) - (window_height / 2))
+
+# Set the final geometry (size AND position)
+mainWindow.window.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
 
 # Run the main application
 mainWindow.window.mainloop()
