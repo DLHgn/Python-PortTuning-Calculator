@@ -89,17 +89,20 @@ def run_full_analysis_at_frequency(frequency, params):
     # s represents the common abbreviation for j*w where j in an imaginary number.
     s = 1j * w
 
-    # wb represents angular box tuning frequency as 2*PI*port_tuning
-    wb = 2.0 * math.pi * params['fb']
-
-    # ccab represents the acoustic compliance of the enclosure volume
+    # Calculate Ccab (box compliance)
     ccab = calculate_ccab(params['vb'], params['p0'], params['c'])
 
-    # ral represents the acoustic resistance modeling air leak
-    ral = calculate_ral(params['ql'], wb, ccab)
+    # Calculate Lmap (port mass) from physical dimensions
+    port_diam = 2 * math.sqrt(params['ap'] / math.pi)
+    eff_port_length = params['lp'] + (params['end_corr'] * port_diam)
+    lmap = (params['p0'] * eff_port_length) / params['ap']
 
-    # lmap represents angular frequency as 2*PI*frequency
-    lmap = calculate_lmap(wb, ccab)
+    # Calculate fb (tuning freq) and wb (angular freq)
+    fb = 1 / (2 * math.pi * math.sqrt(lmap * ccab))
+    wb = 2 * math.pi * fb
+
+    # Calculate Ral (losses) based on the new wb
+    ral = calculate_ral(params['ql'], wb, ccab)
 
     # ----
     # Run the core physics simulation
@@ -124,6 +127,7 @@ def run_full_analysis_at_frequency(frequency, params):
         "i": core_results['i'],
         "u": core_results['u'],
         "pd": core_results['pd'],
+        "fb": fb,
         "port_velocity_ms": abs(port_vel),
         "cone_excursion_mm": abs(cone_exc) * 1000,
         # Add other results as needed

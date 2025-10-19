@@ -51,6 +51,9 @@ class Btn(object):
             print(f"Port Velocity: {results['port_velocity_ms']:.2f} m/s")
             print("------------------------------------------")
 
+            # Set port tuning value
+            data_manager.set_port_tuning_output(results['fb'])
+
             # Run Graph Analysis
             start_freq = data_manager.get_start_freq()
             stop_freq = data_manager.get_stop_freq()

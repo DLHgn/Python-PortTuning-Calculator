@@ -37,8 +37,8 @@ class Item(object):
         #Sets a provided value into a readonly Entry.
         #@param value will be set into the Entry object as a string
         self.txtField.configure(state='normal')  #must convert to normal state in order to alter
-        self.txtField.delete(0, END)  #delete current content
-        self.txtField.insert(0, round(value, 2))
+        self.txtField.delete(0, 'end')  #delete current content
+        self.txtField.insert(0, value)
         self.txtField.configure(state='readonly')  #change back to read only so user can't alter value
 
     def item_setup(self, window, pad, txtfield_width, default_text, *args, use_btn=True, use_cmb=False):
