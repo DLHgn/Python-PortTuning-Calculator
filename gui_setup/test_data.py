@@ -19,7 +19,6 @@ test_values = {
     'port_area': 0.0079,
     'port_area_unit': 'm^2',
     'port_tuning': 25.1082,
-    'frequency': 30.02,
     'end_correction': 'One Flanged End', # This corresponds to 0.732
     'port_length': 0.303,
     'port_length_unit': 'm'

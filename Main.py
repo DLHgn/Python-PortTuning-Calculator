@@ -150,14 +150,10 @@ data_manager.set_port_tuning(portTuning)
 # ---
 # Controls Frame Widgets
 # ---
-frequency = gui_setup.gui_items.Item("Test Frequency", 0, 0)
-frequency.item_setup(controls_frame, pad, txtfield_size, "Hz")
-data_manager.set_frequency(frequency)
-
-submit = gui_setup.buttons.Btn(2, 0, "Submit")
+submit = gui_setup.buttons.Btn(0, 0, "Submit")
 submit.btn_setup(controls_frame, pad)
 
-loadTest = gui_setup.buttons.Btn(3, 0, "Load Test")
+loadTest = gui_setup.buttons.Btn(1, 0, "Load Test")
 loadTest.btn_setup(controls_frame, pad)
 
 # Start freq for graph

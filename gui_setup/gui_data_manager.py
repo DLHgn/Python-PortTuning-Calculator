@@ -20,7 +20,6 @@ __rms = None
 __bl = None
 __sd = None
 __vg = None
-__frequency = None
 __graph_canvas = None
 
 # Below are set functions that stores the given gui_items.Item object into the global variable. This allows for further
@@ -160,12 +159,6 @@ def set_port_tuning_entry():
     # function Item.set_output_text()
     global __port_tuning
     __port_tuning.set_output_text(port_tuning_calculation())
-
-def set_frequency(frequency):
-    # This function takes the frequency currently being calculated on and setting it the global variable __frequency
-    # to be used by the below functions
-    global __frequency
-    __frequency = frequency
 
 def set_graph_canvas(canvas):
     # Stores the main Matplotlib canvas object
@@ -420,12 +413,6 @@ def get_port_tuning_hz():
             return 25.1082 # Default test value
     return 25.1082 # Default test value
 
-def get_frequency():
-    try:
-        return float(__frequency.get_txtfield())
-    except (ValueError, AttributeError):
-        return 30.02 # Default test frequency
-
 def get_end_correction():
     # Returns the numeric end correction factor
     global __end_correction
@@ -552,8 +539,6 @@ def load_test_values():
             __port_length.set_btn_text(data['port_length_unit'])
         if __port_tuning:
             __port_tuning.set_input_text(data['port_tuning'])
-        if __frequency:
-            __frequency.set_input_text(data['frequency'])
         if __end_correction:
             __end_correction.set_cmb_text(data['end_correction'])
         if __start_freq:

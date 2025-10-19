@@ -37,32 +37,39 @@ class Btn(object):
         # This function handles the button event. Differentiates between a button click used to determine units of given
         # data and the submit button that starts the calculations.
         if self.btntxt == 'Submit':
+            print("--- Running Analysis ---")
 
-            # Run Single-Frequency Analysis
-            print("--- Running Single-Frequency Analysis ---")
+            # Gather all raw inputs needed for calculations
             params = data_manager.gather_all_inputs()
-            freq = data_manager.get_frequency()
-            results = computations.run_full_analysis_at_frequency(freq, params)
 
-            # Print the results for the single frequency
-            print(f"Frequency: {results['frequency']:.2f} Hz")
-            print(f"Input Impedance: {abs(results['zin']):.2f} Ohms")
-            print(f"Cone Excursion: {results['cone_excursion_mm']:.2f} mm")
-            print(f"Port Velocity: {results['port_velocity_ms']:.2f} m/s")
-            print("------------------------------------------")
+            # Calculate the Port Tuning Frequency (fb) using the dedicated function
+            # (This assumes port_tuning_calculation is now in computations.py
+            # and accepts the params dictionary)
+            try:
+                calculated_fb = computations.port_tuning_calculation(params)
+                # Update the read-only Port Tuning display field
+                data_manager.set_port_tuning_output(calculated_fb)
+                print(f"Calculated Port Tuning (fb): {calculated_fb:.2f} Hz")
+            except Exception as e:
+                print(f"Error calculating or displaying port tuning: {e}")
+                # Optionally display an error message in the field
+                data_manager.set_port_tuning_output("Error")
 
-            # Set port tuning value
-            data_manager.set_port_tuning_output(results['fb'])
-
-            # Run Graph Analysis
+            # Get graph settings from the GUI
             start_freq = data_manager.get_start_freq()
             stop_freq = data_manager.get_stop_freq()
             canvas = data_manager.get_graph_canvas()
+            #graph_type = data_manager.get_selected_graph_type()  # Assuming graph selection exists
 
+            # Generate and display the graph
             if canvas:
+                # Pass the already gathered params dictionary
+                #computations.plot_selected_data(canvas, params, start_freq, stop_freq, graph_type)
                 computations.plot_impedance_curve(canvas, params, start_freq, stop_freq)
             else:
                 print("Error: Graph canvas not found.")
+
+            print("------------------------------------------")
 
         # This elif is added for test data purposes. Can be removed once not needed
         elif self.btntxt == 'Load Test':
