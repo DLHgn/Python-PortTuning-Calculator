@@ -5,9 +5,62 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk
 )
+import gui_setup.computations as computations
 
 pad = 5
 txtfield_size = 8
+
+def _on_graph_select(event=None):
+    # Called when the graph selection combobox value changes.
+    # Triggers a graph update using current input parameters.
+    print("Graph selection changed, updating plot...")
+
+    # Gather all current inputs from the GUI
+    # (Ensures the graph reflects the latest parameters)
+    try:
+        params = data_manager.gather_all_inputs()
+    except Exception as e:
+        print(f"Error gathering inputs during graph update: {e}")
+        return # Stop if inputs are invalid
+
+    # Get graph settings
+    start_freq = data_manager.get_start_freq()
+    stop_freq = data_manager.get_stop_freq()
+    graph_step = data_manager.get_graph_step()
+    canvas = data_manager.get_graph_canvas()
+    graph_type = data_manager.get_selected_graph_type()
+
+    # Update the Port Tuning display (if calculation is valid)
+    if 'fb' in params:
+         data_manager.set_port_tuning_output(params['fb'])
+    else:
+         # Handle case where fb calculation might fail within gather_all_inputs
+         # or is structured differently.
+         # For robustness, we could recalculate fb here if needed.
+         try:
+             calculated_fb = computations.port_tuning_calculation(params)
+             data_manager.set_port_tuning_output(calculated_fb)
+         except Exception as e:
+             print(f"Error updating port tuning display: {e}")
+             data_manager.set_port_tuning_output("Error")
+
+
+    # Generate and display the graph
+    if canvas:
+        try:
+            computations.plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step=graph_step)
+        except Exception as e:
+            print(f"Error plotting selected data: {e}")
+            # Optionally clear the graph or show an error message on it
+            fig = canvas.figure
+            fig.clear()
+            ax = fig.add_subplot(111)
+            ax.text(0.5, 0.5, 'Error plotting graph', ha='center', va='center')
+            canvas.draw()
+    else:
+        print("Error: Graph canvas not found.")
+
+    print("------------------------------------------")
 
 # setup main window
 # We make it larger to accommodate the new layout
@@ -48,6 +101,9 @@ graph_select_combo.pack(side="left")
 
 # Tell the data manager about the combobox so we can read its value later
 data_manager.set_graph_select_combo(graph_select_combo)
+
+# When the selection changes, call the _on_graph_select function
+graph_select_combo.bind("<<ComboboxSelected>>", _on_graph_select)
 
 # --- Building Graph ---
 # Create a figure
