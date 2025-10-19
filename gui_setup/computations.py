@@ -9,9 +9,10 @@ class CursorAnnotation(object):
     # Creates an interactive data cursor that "snaps" to the plot line
     # and displays the (x, y) coordinates.
 
-    def __init__(self, ax, line):
+    def __init__(self, ax, line, formatter):
         self.ax = ax
         self.line = line
+        self.formatter = formatter
         self.data_x, self.data_y = line.get_xdata(), line.get_ydata()
         self.canvas = ax.figure.canvas
 
@@ -61,7 +62,7 @@ class CursorAnnotation(object):
         point_y = self.data_y[index]
 
         # Update the annotation text and position
-        self.annotation.set_text(f"Freq: {point_x:.1f} Hz\nImp: {point_y:.1f} Ω")
+        self.annotation.set_text(self.formatter(point_x, point_y))
         self.annotation.xy = (point_x, point_y)
 
         # Make the annotation visible and redraw
@@ -254,7 +255,7 @@ def calculate_cone_excursion(core_results, w):
     return (math.sqrt(2) * u) / w
 
 
-def plot_impedance_curve(canvas, params, start_freq, stop_freq, step):
+def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
     # Loops through a frequency range, calls the main analysis function,
     # and draws the result on the provided Tkinter canvas.
 
@@ -263,36 +264,61 @@ def plot_impedance_curve(canvas, params, start_freq, stop_freq, step):
     # Create the list of frequencies to test
     num_steps = int((stop_freq - start_freq) / step) + 1
     frequencies = np.linspace(start_freq, stop_freq, num=num_steps)
+    plot_data = [] # Stores the y-values for the plot
 
-    plot_data = []
-
-    # Loop and calculate
+    # Loop and extract the correct data based on the graph_type
     for freq in frequencies:
         results = run_full_analysis_at_frequency(freq, params)
-        plot_data.append(abs(results["zin"]))
+        if graph_type == "Impedance":
+            plot_data.append(abs(results["zin"]))
+            y_label = "Impedance (Ohms)"
+            use_log_scale = True
+            annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nImp: {y:.1f} Ω"
+        elif graph_type == "Cone Excursion (mm)":
+            plot_data.append(results["cone_excursion_mm"])
+            y_label = "Cone Excursion (mm)"
+            use_log_scale = False  # Linear scale for excursion
+            annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nExc: {y:.2f} mm"
+        elif graph_type == "Port Velocity (m/s)":
+            plot_data.append(results["port_velocity_ms"])
+            y_label = "Port Velocity (m/s)"
+            use_log_scale = False  # Linear scale for velocity
+            annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nVel: {y:.2f} m/s"
+        else:
+            # Fallback to Impedance if type is unknown
+            plot_data.append(abs(results["zin"]))
+            y_label = "Impedance (Ohms)"
+            use_log_scale = True
+            annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nImp: {y:.1f} Ω"
 
-    # Get the figure and axes from the canvas
+    # Plotting Section (updates based on selected type)
     fig = canvas.figure
     fig.clear()
     ax = fig.add_subplot(111)
 
     # Draw the new plot on the axes
-    line, = ax.plot(frequencies, plot_data) # Capture line object that ax.plot returns
-    ax.set_title("System Impedance")
+    line, = ax.plot(frequencies, plot_data) # Plot the selected data
+    ax.set_title(f"System {graph_type}") # Dynamic title
     ax.set_xlabel("Frequency (Hz)")
-    ax.set_ylabel("Impedance (Ohms)")
+    ax.set_ylabel(y_label)  # Dynamic Y-label
     ax.grid(True, which="both", ls="--", c='0.7')
-    ax.set_yscale('log')
+    # Apply correct Y-axis scale
+    if use_log_scale:
+        ax.set_yscale('log')
+    else:
+        ax.set_yscale('linear')
+        ax.set_ylim(bottom=0)  # Ensure linear plots start at 0
+
     # Auto-set x-ticks based on range, or set manually
     ax.set_xticks(np.linspace(start_freq, stop_freq, num=10, dtype=int))
+    ax.set_xlim(start_freq, stop_freq)  # Set x-axis limits
     fig.tight_layout()
 
     # Create the interactive cursor object
-    cursor = CursorAnnotation(ax, line)
+    cursor = CursorAnnotation(ax, line, annotation_formatter)
     # Store it on the canvas to prevent it from being garbage-collected
     canvas.cursor_annotation = cursor
 
     # Redraw the canvas
     canvas.draw()
-
     print("Plot updated.")

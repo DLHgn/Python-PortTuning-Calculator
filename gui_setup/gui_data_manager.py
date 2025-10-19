@@ -170,7 +170,12 @@ def set_bl(value):
     global __bl
     __bl = value
 
-# Below is our setters
+def set_graph_select_combo(combobox):
+    # Stores the graph selection Combobox object
+    global __graph_select_combo
+    __graph_select_combo = combobox
+
+# Below is our getters
 def get_re():
     # This function is necessary to get the __re value since there isn't a conversion function that does it
     return float(__re.get_txtfield())
@@ -255,6 +260,12 @@ def get_stop_freq():
         return int(float(__stop_freq.get_txtfield()))
     except (ValueError, AttributeError):
         return 100 # Default 100 Hz
+
+def get_selected_graph_type():
+    # Returns the currently selected graph type string from the Combobox
+    if __graph_select_combo:
+        return __graph_select_combo.get()
+    return "Impedance" # Default to "Impedance" if combobox isn't found
 
 # Below we have conversion functions. These also serve the purpose of getting and returning the value in the textfield
 def convert_port_area_in():

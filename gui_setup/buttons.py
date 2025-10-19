@@ -60,13 +60,12 @@ class Btn(object):
             stop_freq = data_manager.get_stop_freq()
             graph_step = data_manager.get_graph_step()
             canvas = data_manager.get_graph_canvas()
-            #graph_type = data_manager.get_selected_graph_type()  # Assuming graph selection exists
+            graph_type = data_manager.get_selected_graph_type()
 
             # Generate and display the graph
             if canvas:
                 # Pass the already gathered params dictionary
-                #computations.plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step=graph_step)
-                computations.plot_impedance_curve(canvas, params, start_freq, stop_freq, step=graph_step)
+                computations.plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step=graph_step)
             else:
                 print("Error: Graph canvas not found.")
 

@@ -32,7 +32,24 @@ notebook.add(input_frame, text='Inputs')
 graph_frame = ttk.Frame(notebook)
 notebook.add(graph_frame, text='Graphs')
 
-# --- Building Impedance Graph ---
+# Create a frame to hold the graph selection controls at the top
+graph_controls_frame = ttk.Frame(graph_frame)
+graph_controls_frame.pack(side="top", fill="x", padx=pad, pady=(pad, 0))
+
+# Add a label for the dropdown
+graph_select_label = ttk.Label(graph_controls_frame, text="Select Graph:")
+graph_select_label.pack(side="left", padx=(0, pad))
+
+# Add the Combobox widget
+graph_options = ["Impedance", "Cone Excursion (mm)", "Port Velocity (m/s)"]
+graph_select_combo = ttk.Combobox(graph_controls_frame, values=graph_options, state='readonly', width=25)
+graph_select_combo.set(graph_options[0]) # Set "Impedance" as the default
+graph_select_combo.pack(side="left")
+
+# Tell the data manager about the combobox so we can read its value later
+data_manager.set_graph_select_combo(graph_select_combo)
+
+# --- Building Graph ---
 # Create a figure
 fig = Figure(figsize=(6, 4), dpi=100)
 
