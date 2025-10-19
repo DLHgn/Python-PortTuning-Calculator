@@ -127,8 +127,13 @@ portLength.item_setup(box_frame, pad, txtfield_size, "in", "cm", "ft", "m", "mm"
 data_manager.set_port_length(portLength)
 
 endCorrection = gui_setup.gui_items.Item("End Correction", 0, 3)
-endCorrection.item_setup(box_frame, pad, txtfield_size, True, "One Flanged End", "Both Flanged Ends",
-                         "Both Free Ends", "3 Common Walls", "2 Common Walls", "1 Common Wall")
+endCorrection.item_setup(box_frame, pad, txtfield_size, "One Flanged End",
+                         "Both Flanged Ends",
+                         "Both Free Ends",
+                         "3 Common Walls",
+                         "2 Common Walls",
+                         "1 Common Wall",
+                         use_btn=False, use_cmb=True)
 data_manager.set_end_correction(endCorrection)
 
 numPorts = gui_setup.gui_items.Item("Number of Ports", 0, 4)
