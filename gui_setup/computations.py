@@ -117,10 +117,8 @@ def run_full_analysis_at_frequency(frequency, params):
     # w represents angular tuning frequency. Note that this is distinctly different than wb.
     # This value is used during analysis and will vary based on the frequency being calculated.
     w = 2.0 * math.pi * frequency
-
     # s represents the common abbreviation for j*w where j in an imaginary number.
     s = 1j * w
-
     # First, calculate fb using your averaged formula
     fb = port_tuning_calculation(params)
 
@@ -128,13 +126,10 @@ def run_full_analysis_at_frequency(frequency, params):
 
     # wb represents angular box tuning frequency as 2*PI*port_tuning
     wb = 2.0 * math.pi * fb
-
     # ccab represents the acoustic compliance of the enclosure volume
     ccab = calculate_ccab(params['vb'], params['p0'], params['c'])
-
     # ral represents the acoustic resistance modeling air leak
     ral = calculate_ral(params['ql'], wb, ccab)
-
     # lmap represents angular frequency as 2*PI*frequency
     lmap = calculate_lmap(wb, ccab)
 
@@ -164,8 +159,11 @@ def run_full_analysis_at_frequency(frequency, params):
         "fb": fb,
         "port_velocity_ms": abs(port_vel),
         "cone_excursion_mm": abs(cone_exc) * 1000,
-        # Add other results as needed
-    }
+        "lmap": lmap,
+        "s": s,
+        "w": w,
+        "p0": params['p0'],
+        "sd": params['sd']    }
 
 # ----
 # Pure Math Functions
@@ -254,21 +252,67 @@ def calculate_cone_excursion(core_results, w):
     u = core_results['u']
     return (math.sqrt(2) * u) / w
 
+def calculate_spl(results, distance=1.0):
+    # Calculates the Sound Pressure Level (SPL) at a given distance.
+
+    # Args:
+    #    results (dict): The dictionary returned by run_full_analysis_at_frequency.
+    #    distance (float): Distance from the source in meters (default 1.0).
+
+    # Returns:
+    #    float: SPL in dB.
+
+    # Get necessary values from the results dictionary
+    U = results['u']        # Cone velocity (complex m/s)
+    Pd = results['pd']      # Enclosure pressure (complex Pa)
+    Lmap = results['lmap']  # Port acoustic mass (kg/m^4)
+    s = results['s']        # Complex frequency (rad/s)
+    w = results['w']        # Angular frequency (rad/s)
+    p0 = results['p0']      # Air density (kg/m^3)
+    Sd = results['sd']      # Cone area (m^2)
+
+    # Calculate Volume Velocities (complex m^3/s)
+    Q_cone = Sd * U
+    Ilmap = Pd / (s * Lmap) # Port volume velocity
+
+    # Total Volume Velocity (complex sum)
+    Q_total = Q_cone + Ilmap
+
+    # Calculate Sound Pressure (complex Pa) at the specified distance
+    # Formula: p = (j * w * p0 * Q_total) / (2 * pi * r)   (since s = jw)
+    p = (s * p0 * Q_total) / (2 * math.pi * distance)
+
+    # Convert Pressure magnitude to SPL (dB)
+    p_ref = 20e-6 # Reference pressure (threshold of hearing)
+    p_magnitude = abs(p)
+
+    # Avoid log10(0) errors
+    if p_magnitude < 1e-12: # Check against a very small number
+        return -np.inf # Or return a very low dB value, e.g., -200
+
+    spl = 20 * math.log10(p_magnitude / p_ref)
+    return spl
+
 
 def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
     # Loops through a frequency range, calls the main analysis function,
     # and draws the result on the provided Tkinter canvas.
 
-    print(f"Generating Impedance plot from {start_freq} Hz to {stop_freq} Hz with step {step} Hz...")
+    print(f"Generating '{graph_type}' plot from {start_freq} Hz to {stop_freq} Hz with step {step} Hz...")
 
     # Create the list of frequencies to test
     num_steps = int((stop_freq - start_freq) / step) + 1
     frequencies = np.linspace(start_freq, stop_freq, num=num_steps)
     plot_data = [] # Stores the y-values for the plot
 
+    y_label = "Value"
+    use_log_scale = False
+    annotation_formatter = lambda x, y: f"X:{x:.1f}\nY:{y:.1f}"
+
     # Loop and extract the correct data based on the graph_type
     for freq in frequencies:
         results = run_full_analysis_at_frequency(freq, params)
+
         if graph_type == "Impedance":
             plot_data.append(abs(results["zin"]))
             y_label = "Impedance (Ohms)"
@@ -284,6 +328,12 @@ def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
             y_label = "Port Velocity (m/s)"
             use_log_scale = False  # Linear scale for velocity
             annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nVel: {y:.2f} m/s"
+        elif graph_type == "SPL (dB @ 1m)":
+            spl = calculate_spl(results, distance=1.0)
+            plot_data.append(spl)
+            y_label = "SPL (dB @ 1m)"
+            use_log_scale = False  # SPL is already logarithmic (dB)
+            annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nSPL: {y:.1f} dB"
         else:
             # Fallback to Impedance if type is unknown
             plot_data.append(abs(results["zin"]))
@@ -307,7 +357,14 @@ def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
         ax.set_yscale('log')
     else:
         ax.set_yscale('linear')
-        ax.set_ylim(bottom=0)  # Ensure linear plots start at 0
+        if graph_type != "SPL (dB @ 1m)":  # Don't force SPL to start at 0
+            min_val = min(plot_data) if plot_data else 0
+            max_val = max(plot_data) if plot_data else 1
+            padding = (max_val - min_val) * 0.05  # Add 5% padding
+            ax.set_ylim(bottom=max(0, min_val - padding), top=max_val + padding)  # Start near 0 or min
+        # For SPL, let Matplotlib auto-scale or set reasonable dB limits
+        else:
+            ax.set_ylim(bottom=max(min(plot_data)-10, 0)) # Example: start 10dB below min
 
     # Auto-set x-ticks based on range, or set manually
     ax.set_xticks(np.linspace(start_freq, stop_freq, num=10, dtype=int))
