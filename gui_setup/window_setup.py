@@ -12,8 +12,7 @@ class Window(object):
     def window_setup(self, title):
         # Sets up the size, location (center of screen), and title of a window.
         # @param title is a string that represents the title of th window and is passed into
-        #        the window_text.Title() class object
-        #self.window.geometry('%dx%d%s' % (self.x_dim, self.y_dim, self.window_center()))
+        # the window_text.Title() class object
         window_title = window_text.Title(self.window, title)
         window_title.title_setup()
 
