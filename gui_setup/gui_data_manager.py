@@ -21,6 +21,9 @@ __bl = None
 __sd = None
 __vg = None
 __graph_canvas = None
+__stop_freq = None
+__graph_select_combo = None
+__graph_step = None
 
 # Below are set functions that stores the given gui_items.Item object into the global variable. This allows for further
 # manipulation and value storage. Included with these are corresponding get functions if there is no conversion
@@ -83,50 +86,6 @@ def set_re(value):
     global __re
     __re = value
 
-def get_re():
-    # This function is necessary to get the __re value since there isn't a conversion function that does it
-    return float(__re.get_txtfield())
-
-def set_rms(value):
-    # set_rms stores the given gui_items.Item object into the rms global variable
-    # @param value is a gui_items.Item object
-    # This variable represents the mechanical dampening of the system
-    global __rms
-    __rms = value
-
-def get_rms():
-    # This function is necessary to get the __rms value since there isn't a conversion that function does it
-    return float(__rms.get_txtfield())
-
-def set_bl(value):
-    # set_bl stores the given gui_items.Item object into the bl global variable
-    # @param value is a gui_items.Item object
-    # This variable represents total motor force of the system
-    global __bl
-    __bl = value
-
-def get_bl():
-    # This function is necessary to get the __bl value since there isn't a conversion that function does it
-    return float(__bl.get_txtfield())
-
-def set_sd(value):
-    # set_sd stores the given gui_items.Item object into the sd global variable
-    # @param value is a gui_items.Item object
-    #This variable represents total cone area of the system
-    global __sd
-    __sd = value
-
-def set_vg(value):
-    # set_vg stores the given gui_items.Item object into the vg global variable
-    # @param value is a gui_items.Item object
-    # This variable represents the amplifier input voltage
-    global __vg
-    __vg = value
-
-def get_vg():
-    # This function is necessary to get the __vg value since there isn't a conversion that function does it
-    return float(__vg.get_txtfield())
-
 def set_p0():
     # For now this function won't be used since p0 is set to a constant 1.20095 kg/m^2 but can be expanded later to
     # allow for custom input by the user with the default being set to 1.20095. May want to allow for conversion as well
@@ -177,6 +136,125 @@ def set_port_tuning_output(value):
     # Sets the read-only Port Tuning field
     if __port_tuning:
         __port_tuning.set_output_text(f"{value:.2f} Hz")
+
+def set_graph_step(value):
+    # Stores the Graph Step Item object
+    global __graph_step
+    __graph_step = value
+
+def set_rms(value):
+    # set_rms stores the given gui_items.Item object into the rms global variable
+    # @param value is a gui_items.Item object
+    # This variable represents the mechanical dampening of the system
+    global __rms
+    __rms = value
+
+def set_sd(value):
+    # set_sd stores the given gui_items.Item object into the sd global variable
+    # @param value is a gui_items.Item object
+    #This variable represents total cone area of the system
+    global __sd
+    __sd = value
+
+def set_vg(value):
+    # set_vg stores the given gui_items.Item object into the vg global variable
+    # @param value is a gui_items.Item object
+    # This variable represents the amplifier input voltage
+    global __vg
+    __vg = value
+
+def set_bl(value):
+    # set_bl stores the given gui_items.Item object into the bl global variable
+    # @param value is a gui_items.Item object
+    # This variable represents total motor force of the system
+    global __bl
+    __bl = value
+
+# Below is our setters
+def get_re():
+    # This function is necessary to get the __re value since there isn't a conversion function that does it
+    return float(__re.get_txtfield())
+
+def get_rms():
+    # This function is necessary to get the __rms value since there isn't a conversion that function does it
+    return float(__rms.get_txtfield())
+
+def get_bl():
+    # This function is necessary to get the __bl value since there isn't a conversion that function does it
+    return float(__bl.get_txtfield())
+
+def get_vg():
+    # This function is necessary to get the __vg value since there isn't a conversion that function does it
+    return float(__vg.get_txtfield())
+
+def get_graph_step():
+    # Gets the graph step size (float), defaults to 1.0
+    if __graph_step:
+        try:
+            step = float(__graph_step.get_txtfield())
+            # Ensure step is positive, otherwise default to 1
+            return step if step > 0 else 1.0
+        except (ValueError, AttributeError):
+            return 1.0 # Default if field is empty or invalid
+    return 1.0 # Default if object doesn't exist
+
+def get_port_tuning_hz():
+    # This is a placeholder.
+    # The port_tuning_calculation itself should be
+    # moved here, but for now, we just read the value.
+    if __port_tuning:
+        try:
+            return float(__port_tuning.get_txtfield())
+        except ValueError:
+            return 25.1082 # Default test value
+    return 25.1082 # Default test value
+
+def get_end_correction():
+    # Returns the numeric end correction factor
+    global __end_correction
+    value = __end_correction.get_cmb()
+    if value == '3 Common Walls':
+        return 2.227
+    elif value == '2 Common Walls':
+        return 1.728
+    elif value == '1 Common Wall':
+        return 1.23
+    elif value == 'One Flanged End':
+        return 0.732
+    elif value == 'Both Flanged Ends':
+        return 0.85
+    elif value == 'Both Free Ends':
+        return 0.614
+    else: # Default
+        return 0.823
+
+def get_number_of_ports():
+    # Gets the number of ports, defaulting to 1
+    try:
+        if __number_of_ports.get_txtfield():
+            return int(__number_of_ports.get_txtfield())
+        else:
+            return 1
+    except (ValueError, AttributeError):
+        return 1
+
+def get_graph_canvas():
+    # Returns the main Matplotlib canvas object
+    return __graph_canvas
+
+def get_start_freq():
+    try:
+        # Get value and convert to integer
+        return int(float(__start_freq.get_txtfield()))
+    except (ValueError, AttributeError):
+        return 20 # Default 20 Hz
+
+def get_stop_freq():
+    try:
+        # Get value and convert to integer
+        return int(float(__stop_freq.get_txtfield()))
+    except (ValueError, AttributeError):
+        return 100 # Default 100 Hz
 
 # Below we have conversion functions. These also serve the purpose of getting and returning the value in the textfield
 def convert_port_area_in():
@@ -401,64 +479,6 @@ def convert_sd():
         return float(__sd.get_txtfield()) / 1550
     elif unit == "ft^2":
         return float(__sd.get_txtfield()) / 10.764
-
-def get_port_tuning_hz():
-    # This is a placeholder.
-    # The port_tuning_calculation itself should be
-    # moved here, but for now, we just read the value.
-    if __port_tuning:
-        try:
-            return float(__port_tuning.get_txtfield())
-        except ValueError:
-            return 25.1082 # Default test value
-    return 25.1082 # Default test value
-
-def get_end_correction():
-    # Returns the numeric end correction factor
-    global __end_correction
-    value = __end_correction.get_cmb()
-    if value == '3 Common Walls':
-        return 2.227
-    elif value == '2 Common Walls':
-        return 1.728
-    elif value == '1 Common Wall':
-        return 1.23
-    elif value == 'One Flanged End':
-        return 0.732
-    elif value == 'Both Flanged Ends':
-        return 0.85
-    elif value == 'Both Free Ends':
-        return 0.614
-    else: # Default
-        return 0.823
-
-def get_number_of_ports():
-    # Gets the number of ports, defaulting to 1
-    try:
-        if __number_of_ports.get_txtfield():
-            return int(__number_of_ports.get_txtfield())
-        else:
-            return 1
-    except (ValueError, AttributeError):
-        return 1
-
-def get_graph_canvas():
-    # Returns the main Matplotlib canvas object
-    return __graph_canvas
-
-def get_start_freq():
-    try:
-        # Get value and convert to integer
-        return int(float(__start_freq.get_txtfield()))
-    except (ValueError, AttributeError):
-        return 20 # Default 20 Hz
-
-def get_stop_freq():
-    try:
-        # Get value and convert to integer
-        return int(float(__stop_freq.get_txtfield()))
-    except (ValueError, AttributeError):
-        return 100 # Default 100 Hz
 
 # Master function which creates a dictionary of GUI values
 def gather_all_inputs():

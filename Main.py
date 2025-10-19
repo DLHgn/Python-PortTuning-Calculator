@@ -164,9 +164,15 @@ data_manager.set_start_freq(start_freq)
 
 # End freq for graph
 stop_freq = gui_setup.gui_items.Item("Graph Stop Freq", 2, 1)
-stop_freq.item_setup(controls_frame, pad, txtfield_size, "Hz")
+stop_freq.item_setup(controls_frame, pad, txtfield_size, "Hz", use_btn=False)
 stop_freq.insert_default_txtfield("100") # Add default text
 data_manager.set_stop_freq(stop_freq)
+
+# Step size (how fine the graph is)
+graph_step = gui_setup.gui_items.Item("Graph Step (Hz)", 4, 1)
+graph_step.item_setup(controls_frame, pad, txtfield_size, "Hz")
+graph_step.insert_default_txtfield("1") # Default to 1 Hz step
+data_manager.set_graph_step(graph_step)
 
 # ----
 # Centering Logic

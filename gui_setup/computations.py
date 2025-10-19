@@ -254,21 +254,22 @@ def calculate_cone_excursion(core_results, w):
     return (math.sqrt(2) * u) / w
 
 
-def plot_impedance_curve(canvas, params, start_freq, stop_freq, step=1):
+def plot_impedance_curve(canvas, params, start_freq, stop_freq, step):
     # Loops through a frequency range, calls the main analysis function,
     # and draws the result on the provided Tkinter canvas.
 
-    print(f"Generating impedance plot from {start_freq} Hz to {stop_freq} Hz...")
+    print(f"Generating Impedance plot from {start_freq} Hz to {stop_freq} Hz with step {step} Hz...")
 
     # Create the list of frequencies to test
-    frequencies = np.arange(start_freq, stop_freq + 1, step)
+    num_steps = int((stop_freq - start_freq) / step) + 1
+    frequencies = np.linspace(start_freq, stop_freq, num=num_steps)
 
-    impedance_magnitudes = []
+    plot_data = []
 
     # Loop and calculate
     for freq in frequencies:
         results = run_full_analysis_at_frequency(freq, params)
-        impedance_magnitudes.append(abs(results["zin"]))
+        plot_data.append(abs(results["zin"]))
 
     # Get the figure and axes from the canvas
     fig = canvas.figure
@@ -276,7 +277,7 @@ def plot_impedance_curve(canvas, params, start_freq, stop_freq, step=1):
     ax = fig.add_subplot(111)
 
     # Draw the new plot on the axes
-    line, = ax.plot(frequencies, impedance_magnitudes) # Capture line object that ax.plot returns
+    line, = ax.plot(frequencies, plot_data) # Capture line object that ax.plot returns
     ax.set_title("System Impedance")
     ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel("Impedance (Ohms)")
