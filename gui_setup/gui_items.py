@@ -1,6 +1,7 @@
 from tkinter import *
 from gui_setup import buttons
-
+import tkinter.ttk as ttk
+import tkinter as tk
 
 class Item(object):
     # The Item class takes in text and location to setup an item within the GUI (can consist of a label,
@@ -15,6 +16,70 @@ class Item(object):
         self.txtField = Entry()
         self.button = buttons.Btn(self.col, self.rw, self.text)
         self.cmb = buttons.Combo(self.col + 1, self.rw, self.text)
+        self.is_valid = True  # Track validation state
+        self.default_bg = None  # Store default background color
+
+    def validate_numeric_input(self, event=None):
+        # Checks if the Entry content is a valid float.
+        # Updates highlight border color for errors, otherwise reverts to default.
+        # Stores default border settings once.
+        if not hasattr(self, 'txtField') or not isinstance(self.txtField, tk.Entry):
+            return True  # Not an Entry field, skip validation
+        # Now, check if the Entry is read-only
+        if self.txtField.cget('state') == 'readonly':
+            return True  # Skip validation for read-only fields like Port Tuning
+
+        # --- STORE DEFAULT BORDER SETTINGS (if not already stored) ---
+        # Initialize storage attributes if they don't exist
+        if not hasattr(self, 'default_highlight_thickness'):
+            self.default_highlight_thickness = None
+        if not hasattr(self, 'default_highlight_color'):
+            self.default_highlight_color = None
+
+        # Store default thickness once
+        if self.default_highlight_thickness is None:
+            try:
+                # Default thickness is often 0 or 1
+                thickness_str = self.txtField.cget("highlightthickness")
+                self.default_highlight_thickness = int(thickness_str)
+            except:
+                self.default_highlight_thickness = 0  # Fallback
+
+        # Store default highlight background color once
+        if self.default_highlight_color is None:
+            try:
+                # This is the color shown when widget doesn't have focus
+                self.default_highlight_color = self.txtField.cget("highlightbackground")
+                # Ensure it's not empty
+                if not self.default_highlight_color: self.default_highlight_color = 'SystemButtonFace'  # A guess
+            except:
+                self.default_highlight_color = 'SystemButtonFace'  # Fallback color
+        # --- END STORING DEFAULTS ---
+
+        current_value = self.get_txtfield()
+        try:
+            float(current_value)  # Attempt conversion
+
+            # --- If successful, RESET border using stored defaults ---
+            # Ensure attributes were successfully stored before using
+            reset_thickness = getattr(self, 'default_highlight_thickness', 0)
+            reset_color = getattr(self, 'default_highlight_color', 'SystemButtonFace')
+
+            self.txtField.config(
+                highlightthickness=reset_thickness,
+                highlightbackground=reset_color
+            )
+
+            self.is_valid = True
+            return True
+        except ValueError:
+            # --- If fails, set RED border ---
+            self.txtField.config(
+                highlightthickness=2,  # Make border visible (2 pixels)
+                highlightbackground="red"  # Set border color to red
+            )
+            self.is_valid = False
+            return False
 
     def get_txtfield(self):
         #returns the text that is currently in the Entry object of the item
@@ -53,10 +118,12 @@ class Item(object):
         # @param use_cmb is a boolean to i.d. if a combobox object should be incorporated with the item (default False)
         label = Label(window, text=self.text)
         label.grid(column=self.col, row=self.rw, padx=pad, pady=pad, sticky=E)
-        if use_btn:
+        if use_btn and not use_cmb:
             #Entry Object
             self.txtField = Entry(window, width=txtfield_width)
             self.txtField.grid(column=self.col + 1, row=self.rw, padx=pad, pady=pad, sticky=E+W)
+            self.txtField.bind("<KeyRelease>", self.validate_numeric_input)  # Validate on key release
+            self.txtField.bind("<FocusOut>", self.validate_numeric_input)  # Validate when leaving field
             #Button Object
             self.button = buttons.Btn(self.col + 2, self.rw, default_text, args)
             self.button.btn_setup(window, pad)
@@ -68,6 +135,8 @@ class Item(object):
             #Entry Object
             self.txtField = Entry(window, width=txtfield_width)
             self.txtField.grid(column=self.col + 1, row=self.rw, padx=pad, pady=pad, sticky=E + W)
+            self.txtField.bind("<KeyRelease>", self.validate_numeric_input)
+            self.txtField.bind("<FocusOut>", self.validate_numeric_input)
 
     def output(self, window, pad, txtfield_width):
         #output will setup an item like item_setup but will only produce a label and Entry that is set to readonly
@@ -92,6 +161,8 @@ class Item(object):
         # Clears the current entry and inserts new text
         self.txtField.delete(0, 'end')
         self.txtField.insert(0, str(text_to_set))
+        # Reset validation state after setting programmatically
+        self.validate_numeric_input()
 
     def set_btn_text(self, text_to_set):
         # Sets the text of the associated button, if it exists
