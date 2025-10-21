@@ -573,9 +573,9 @@ def load_test_values():
         if __end_correction:
             __end_correction.set_cmb_text(data['end_correction'])
         if __start_freq:
-            __start_freq.set_input_text("20")
+            __start_freq.set_input_text("10")
         if __stop_freq:
-            __stop_freq.set_input_text("100")
+            __stop_freq.set_input_text("120")
 
         print("Test values loaded successfully.")
     except Exception as e:

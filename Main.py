@@ -180,7 +180,7 @@ sd.item_setup(driver_frame, pad, txtfield_size, "m^2", "cm^2", "mm^2", "in^2", "
 data_manager.set_sd(sd)
 
 vg = gui_setup.gui_items.Item("Vg", 0, 7)
-vg.item_setup(driver_frame, pad, txtfield_size, "V")
+vg.item_setup(driver_frame, pad, txtfield_size, "W")
 data_manager.set_vg(vg)
 
 
@@ -232,19 +232,19 @@ loadTest.btn_setup(controls_frame, pad)
 # Start freq for graph
 start_freq = gui_setup.gui_items.Item("Graph Start Freq", 0, 1)
 start_freq.item_setup(controls_frame, pad, txtfield_size, "Hz")
-start_freq.insert_default_txtfield("20") # Add default text
+start_freq.insert_default_txtfield("10") # Add default text
 data_manager.set_start_freq(start_freq)
 
 # End freq for graph
 stop_freq = gui_setup.gui_items.Item("Graph Stop Freq", 2, 1)
 stop_freq.item_setup(controls_frame, pad, txtfield_size, "Hz", use_btn=False)
-stop_freq.insert_default_txtfield("100") # Add default text
+stop_freq.insert_default_txtfield("120") # Add default text
 data_manager.set_stop_freq(stop_freq)
 
 # Step size (how fine the graph is)
 graph_step = gui_setup.gui_items.Item("Graph Step (Hz)", 4, 1)
 graph_step.item_setup(controls_frame, pad, txtfield_size, "Hz")
-graph_step.insert_default_txtfield("1") # Default to 1 Hz step
+graph_step.insert_default_txtfield(".5") # Default to .5 Hz step
 data_manager.set_graph_step(graph_step)
 
 # ----
