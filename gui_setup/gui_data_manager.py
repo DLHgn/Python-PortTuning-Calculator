@@ -1,6 +1,6 @@
 # Creating this file to handle the storing/retrieving of GUI objects.
 import math
-
+import tkinter.messagebox as messagebox
 #this import is used for setting test data and can be removed/commented out when not needed
 from . import test_data
 
@@ -24,6 +24,44 @@ __graph_canvas = None
 __stop_freq = None
 __graph_select_combo = None
 __graph_step = None
+
+def validate_all_inputs():
+    # Checks the 'is_valid' status of all required numeric Item objects.
+
+    # Returns:
+    #     bool: True if all required inputs are valid, False otherwise.
+    #     list: A list of names of the invalid fields.
+    invalid_fields = []
+    # List all the Item objects that require numeric validation
+    # Add any other numeric fields you have (e.g., Vg, Port Length, Port Area, etc.)
+    required_numeric_items = [
+        (__re, "Re"), (__le, "Le"), (__bl, "Bl"), (__sd, "Sd"),
+        (__cms, "Cms"), (__mms, "Mms"), (__rms, "Rms"), (__vg, "Vg"),
+        (__net_volume, "Net Volume"), (__port_area, "Port Area"),
+        (__port_length, "Port Length"), (__number_of_ports, "Number of Ports"),
+        (__start_freq, "Graph Start Freq"), (__stop_freq, "Graph Stop Freq"),
+        (__graph_step, "Graph Step")
+    ]
+
+    all_valid = True
+    for item_obj, item_name in required_numeric_items:
+        if item_obj and hasattr(item_obj, 'is_valid') and not item_obj.is_valid:
+            # Also re-run validation in case it wasn't triggered by an event
+            if not item_obj.validate_numeric_input():
+                 all_valid = False
+                 invalid_fields.append(item_name)
+        elif item_obj is None:
+             print(f"Warning: GUI Item object for '{item_name}' not set.")
+             # Decide if this should be treated as an error
+
+    if not all_valid:
+        # Construct the error message
+        error_message = "Invalid numeric input in the following fields:\n\n"
+        error_message += "\n".join(f"- {name}" for name in invalid_fields)
+        # Show the popup
+        messagebox.showerror("Input Error", error_message)
+
+    return all_valid
 
 # Below are set functions that stores the given gui_items.Item object into the global variable. This allows for further
 # manipulation and value storage. Included with these are corresponding get functions if there is no conversion
