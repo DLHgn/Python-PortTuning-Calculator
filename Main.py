@@ -1,27 +1,52 @@
 import gui_setup
 import gui_setup.gui_data_manager as data_manager
-from tkinter import ttk  # Import the Themed Tkinter widgets
+from tkinter import ttk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk
 )
 import gui_setup.computations as computations
+import tkinter.messagebox as messagebox
 
 pad = 5
 txtfield_size = 8
 
-def _on_graph_select(event=None):
-    # Called when the graph selection combobox value changes.
-    # Triggers a graph update using current input parameters.
-    print("Graph selection changed, updating plot...")
+def _update_graph_view():
+    # Validates inputs, gathers data, updates tuning, and redraws the selected graph.
+    print("Updating graph view...")
 
-    # Gather all current inputs from the GUI
-    # (Ensures the graph reflects the latest parameters)
+    # Validate ALL inputs
+    if not data_manager.validate_all_inputs():
+        print("Input validation failed. Graph update stopped.")
+        # Optional: Clear graph or show validation error on graph
+        # canvas = data_manager.get_graph_canvas()
+        # if canvas:
+        #     fig = canvas.figure
+        #     fig.clear()
+        #     ax = fig.add_subplot(111)
+        #     ax.text(0.5, 0.5, 'Invalid Input Data', ha='center', va='center', color='red')
+        #     canvas.draw()
+        return # Stop if validation fails
+
+    # Gather inputs & Update Tuning
     try:
         params = data_manager.gather_all_inputs()
-    except Exception as e:
-        print(f"Error gathering inputs during graph update: {e}")
-        return # Stop if inputs are invalid
+        # Update Port Tuning display using calculated fb
+        calculated_fb = computations.port_tuning_calculation(params)
+        data_manager.set_port_tuning_output(calculated_fb)
+        print(f"Calculated Port Tuning (fb): {calculated_fb:.2f} Hz")
+
+    except ValueError as e: # Catch specific conversion errors
+        print(f"Error gathering inputs or calculating tuning: {e}")
+        messagebox.showerror("Input Error", f"Could not process input values: {e}")
+        # Update tuning display to show error
+        data_manager.set_port_tuning_output("Error")
+        return # Stop processing
+    except Exception as e: # Catch other unexpected errors
+        print(f"Unexpected error during input gathering/tuning: {e}")
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+        data_manager.set_port_tuning_output("Error")
+        return
 
     # Get graph settings
     start_freq = data_manager.get_start_freq()
@@ -30,37 +55,31 @@ def _on_graph_select(event=None):
     canvas = data_manager.get_graph_canvas()
     graph_type = data_manager.get_selected_graph_type()
 
-    # Update the Port Tuning display (if calculation is valid)
-    if 'fb' in params:
-         data_manager.set_port_tuning_output(params['fb'])
-    else:
-         # Handle case where fb calculation might fail within gather_all_inputs
-         # or is structured differently.
-         # For robustness, we could recalculate fb here if needed.
-         try:
-             calculated_fb = computations.port_tuning_calculation(params)
-             data_manager.set_port_tuning_output(calculated_fb)
-         except Exception as e:
-             print(f"Error updating port tuning display: {e}")
-             data_manager.set_port_tuning_output("Error")
-
-
-    # Generate and display the graph
+    # Plot
     if canvas:
         try:
             computations.plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step=graph_step)
         except Exception as e:
             print(f"Error plotting selected data: {e}")
+            messagebox.showerror("Plotting Error", f"An error occurred during plotting: {e}")
             # Optionally clear the graph or show an error message on it
             fig = canvas.figure
             fig.clear()
             ax = fig.add_subplot(111)
-            ax.text(0.5, 0.5, 'Error plotting graph', ha='center', va='center')
+            ax.text(0.5, 0.5, 'Error plotting graph', ha='center', va='center', color='red')
             canvas.draw()
     else:
         print("Error: Graph canvas not found.")
 
     print("------------------------------------------")
+
+def _on_graph_select(event=None):
+    # Called when the graph selection combobox value changes.
+    _update_graph_view()
+
+def _on_update_graph_clicked():
+    # Called when the "Update Graph" button is clicked.
+    _update_graph_view()
 
 # setup main window
 # We make it larger to accommodate the new layout
@@ -85,48 +104,72 @@ notebook.add(input_frame, text='Inputs')
 graph_frame = ttk.Frame(notebook)
 notebook.add(graph_frame, text='Graphs')
 
-# Create a frame to hold the graph selection controls at the top
+# Controls Frame for the "Graphs" Tab
 graph_controls_frame = ttk.Frame(graph_frame)
 graph_controls_frame.pack(side="top", fill="x", padx=pad, pady=(pad, 0))
 
-# Add a label for the dropdown
-graph_select_label = ttk.Label(graph_controls_frame, text="Select Graph:")
+# Graph Selection Controls (Left Side)
+graph_select_frame = ttk.Frame(graph_controls_frame)
+graph_select_frame.pack(side="left", padx=(0, pad*2))
+
+graph_select_label = ttk.Label(graph_select_frame, text="Select Graph:")
 graph_select_label.pack(side="left", padx=(0, pad))
 
-# Add the Combobox widget
 graph_options = ["Impedance", "Cone Excursion (mm)", "Port Velocity (m/s)", "Group Delay (ms)"]
-graph_select_combo = ttk.Combobox(graph_controls_frame, values=graph_options, state='readonly', width=25)
-graph_select_combo.set(graph_options[0]) # Set "Impedance" as the default
+graph_select_combo = ttk.Combobox(graph_select_frame, values=graph_options, state='readonly', width=20) # Adjusted width
+graph_select_combo.set(graph_options[0])
 graph_select_combo.pack(side="left")
-
-# Tell the data manager about the combobox so we can read its value later
 data_manager.set_graph_select_combo(graph_select_combo)
-
-# When the selection changes, call the _on_graph_select function
 graph_select_combo.bind("<<ComboboxSelected>>", _on_graph_select)
 
-# --- Building Graph ---
-# Create a figure
-fig = Figure(figsize=(6, 4), dpi=100)
 
-# Add a default plot area (we'll draw on this later)
+# Graph Range/Step Controls (Middle-Right Side)
+graph_range_frame = ttk.Frame(graph_controls_frame)
+graph_range_frame.pack(side="left", padx=(0, pad*2))
+
+# Start freq for graph (MOVED TO GRAPH TAB)
+start_freq = gui_setup.gui_items.Item("Start Freq", 0, 0)
+# Use grid within this sub-frame for alignment
+start_freq.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False) # No unit button needed
+start_freq.insert_default_txtfield("10")
+data_manager.set_start_freq(start_freq)
+
+# End freq for graph (MOVED TO GRAPH TAB)
+stop_freq = gui_setup.gui_items.Item("Stop Freq", 2, 0) # Place next to start freq
+stop_freq.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False)
+stop_freq.insert_default_txtfield("120")
+data_manager.set_stop_freq(stop_freq)
+
+# Step size (MOVED TO GRAPH TAB)
+graph_step = gui_setup.gui_items.Item("Step (Hz)", 4, 0) # Place next to stop freq
+graph_step.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False)
+graph_step.insert_default_txtfield(".5")
+data_manager.set_graph_step(graph_step)
+
+
+# Update Button (Right Side)
+update_graph_button = ttk.Button(graph_controls_frame, text="Update Graph", command=_on_update_graph_clicked)
+update_graph_button.pack(side="left", padx=(pad*2, 0))
+
+
+# --- Building Graph Area (Below Controls) ---
+graph_area_frame = ttk.Frame(graph_frame)
+graph_area_frame.pack(side="top", fill="both", expand=True, padx=pad, pady=(pad, 0))
+
+fig = Figure(figsize=(6, 4), dpi=100)
 ax = fig.add_subplot(111)
-ax.grid(True, which="both", ls="--", c='0.7') # Add a grid
+ax.grid(True, which="both", ls="--", c='0.7')
 fig.tight_layout()
 
-# Create the Tkinter canvas object
-canvas = FigureCanvasTkAgg(fig, master=graph_frame)
+canvas = FigureCanvasTkAgg(fig, master=graph_area_frame) # Changed master
 canvas.draw()
 
-# Create the navigation toolbar
-toolbar = NavigationToolbar2Tk(canvas, graph_frame, pack_toolbar=False)
+toolbar = NavigationToolbar2Tk(canvas, graph_area_frame, pack_toolbar=False) # Changed master
 toolbar.update()
 
-# Pack the toolbar and canvas into the Graphs tab
 toolbar.pack(side="bottom", fill="x")
 canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
 
-# Tell the data manager where the canvas is
 data_manager.set_graph_canvas(canvas)
 
 # ---
@@ -220,32 +263,12 @@ portTuning.txtField.configure(state='readonly') # Make it read-only
 data_manager.set_port_tuning(portTuning)
 
 
-# ---
 # Controls Frame Widgets
-# ---
 submit = gui_setup.buttons.Btn(0, 0, "Submit")
 submit.btn_setup(controls_frame, pad)
 
 loadTest = gui_setup.buttons.Btn(1, 0, "Load Test")
 loadTest.btn_setup(controls_frame, pad)
-
-# Start freq for graph
-start_freq = gui_setup.gui_items.Item("Graph Start Freq", 0, 1)
-start_freq.item_setup(controls_frame, pad, txtfield_size, "Hz")
-start_freq.insert_default_txtfield("10") # Add default text
-data_manager.set_start_freq(start_freq)
-
-# End freq for graph
-stop_freq = gui_setup.gui_items.Item("Graph Stop Freq", 2, 1)
-stop_freq.item_setup(controls_frame, pad, txtfield_size, "Hz", use_btn=False)
-stop_freq.insert_default_txtfield("120") # Add default text
-data_manager.set_stop_freq(stop_freq)
-
-# Step size (how fine the graph is)
-graph_step = gui_setup.gui_items.Item("Graph Step (Hz)", 4, 1)
-graph_step.item_setup(controls_frame, pad, txtfield_size, "Hz")
-graph_step.insert_default_txtfield(".5") # Default to .5 Hz step
-data_manager.set_graph_step(graph_step)
 
 # ----
 # Centering Logic
