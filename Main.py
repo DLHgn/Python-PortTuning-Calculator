@@ -94,7 +94,7 @@ graph_select_label = ttk.Label(graph_controls_frame, text="Select Graph:")
 graph_select_label.pack(side="left", padx=(0, pad))
 
 # Add the Combobox widget
-graph_options = ["Impedance", "Cone Excursion (mm)", "Port Velocity (m/s)"]
+graph_options = ["Impedance", "Cone Excursion (mm)", "Port Velocity (m/s)", "Group Delay (ms)"]
 graph_select_combo = ttk.Combobox(graph_controls_frame, values=graph_options, state='readonly', width=25)
 graph_select_combo.set(graph_options[0]) # Set "Impedance" as the default
 graph_select_combo.pack(side="left")

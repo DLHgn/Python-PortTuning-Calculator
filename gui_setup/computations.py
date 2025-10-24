@@ -150,6 +150,7 @@ def run_full_analysis_at_frequency(frequency, params):
 
     port_vel = calculate_port_velocity(core_results, params['port_area_cm'] / 10000, s, lmap)
     cone_exc = calculate_cone_excursion(core_results, w)
+    zin_phase_radians = cmath.phase(core_results['zin'])  # Phase in radians
 
     # ----
     # Return all results as dictionary of values
@@ -158,6 +159,7 @@ def run_full_analysis_at_frequency(frequency, params):
     return {
         "frequency": frequency,
         "zin": core_results['zin'],
+        "zin_phase_rad": zin_phase_radians,
         "i": core_results['i'],
         "u": core_results['u'],
         "pd": core_results['pd'],
@@ -265,31 +267,64 @@ def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
     num_steps = int((stop_freq - start_freq) / step) + 1
     frequencies = np.linspace(start_freq, stop_freq, num=num_steps)
     plot_data = [] # Stores the y-values for the plot
+    phase_data_rad = []
 
     # Loop and extract the correct data based on the graph_type
     for freq in frequencies:
         results = run_full_analysis_at_frequency(freq, params)
         if graph_type == "Impedance":
             plot_data.append(abs(results["zin"]))
-            y_label = "Impedance (Ohms)"
-            use_log_scale = True
-            annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nImp: {y:.1f} Ω"
         elif graph_type == "Cone Excursion (mm)":
             plot_data.append(results["cone_excursion_mm"])
-            y_label = "Cone Excursion (mm)"
-            use_log_scale = False  # Linear scale for excursion
-            annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nExc: {y:.2f} mm"
         elif graph_type == "Port Velocity (m/s)":
             plot_data.append(results["port_velocity_ms"])
-            y_label = "Port Velocity (m/s)"
-            use_log_scale = False  # Linear scale for velocity
-            annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nVel: {y:.2f} m/s"
-        else:
-            # Fallback to Impedance if type is unknown
+        elif graph_type == "Group Delay (ms)":
+            # Just store phase for now, calculate delay later
+            phase_data_rad.append(results["zin_phase_rad"])
+        else:  # Fallback to Impedance
             plot_data.append(abs(results["zin"]))
-            y_label = "Impedance (Ohms)"
-            use_log_scale = True
-            annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nImp: {y:.1f} Ω"
+
+    # Setup plot based on type after data gathering
+    if graph_type == "Impedance":
+        y_label = "Impedance (Ohms)"
+        use_log_scale = True
+        annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nImp: {y:.1f} Ω"
+    elif graph_type == "Cone Excursion (mm)":
+        y_label = "Cone Excursion (mm)"
+        use_log_scale = False
+        annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nExc: {y:.2f} mm"
+    elif graph_type == "Port Velocity (m/s)":
+        y_label = "Port Velocity (m/s)"
+        use_log_scale = False
+        annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nVel: {y:.2f} m/s"
+    elif graph_type == "Group Delay (ms)":
+        y_label = "Group Delay (ms)"
+        use_log_scale = False
+        annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nGD: {y:.2f} ms"
+
+        # --- Calculate Group Delay ---
+        # Need angular frequencies (omega = 2*pi*f)
+        angular_frequencies = 2 * np.pi * frequencies
+
+        # Unwrap phase to handle jumps (e.g., from +pi to -pi)
+        unwrapped_phase = np.unwrap(phase_data_rad)
+
+        # Numerical derivative of phase w.r.t. angular frequency
+        # np.gradient calculates the gradient using central differences
+        dphi_domega = np.gradient(unwrapped_phase, angular_frequencies)
+
+        # Group Delay = -dphi/domega (in seconds)
+        group_delay_sec = -dphi_domega
+
+        # Convert to milliseconds
+        plot_data = group_delay_sec * 1000
+        # ---------------------------
+
+    else: # Fallback case
+        graph_type = "Impedance" # Ensure title reflects fallback
+        y_label = "Impedance (Ohms)"
+        use_log_scale = True
+        annotation_formatter = lambda x, y: f"Freq: {x:.1f} Hz\nImp: {y:.1f} Ω"
 
     # Plotting Section (updates based on selected type)
     fig = canvas.figure
