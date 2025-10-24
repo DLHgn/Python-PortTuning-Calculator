@@ -172,28 +172,18 @@ canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
 
 data_manager.set_graph_canvas(canvas)
 
-# ---
 # Organize the "Inputs" Tab with Labelframes
-# ---
-# We'll create three groups
+# We'll create two groups
 driver_frame = ttk.Labelframe(input_frame, text="Driver Parameters")
 driver_frame.grid(column=0, row=0, padx=pad, pady=pad, sticky="nw", ipadx=pad, ipady=pad)
 
 box_frame = ttk.Labelframe(input_frame, text="Box & Port Parameters")
 box_frame.grid(column=1, row=0, padx=pad, pady=pad, sticky="nw", ipadx=pad, ipady=pad)
 
-controls_frame = ttk.Labelframe(input_frame, text="Controls & Analysis")
-controls_frame.grid(column=0, row=1, columnspan=2, padx=pad, pady=pad, sticky="ew", ipadx=pad, ipady=pad)
-
-
-# ---
 # Add All Widgets to their new 'Labelframe' parents
-# ---
 # Note: The 'col' and 'rw' are now relative to their new frame.
 
-# ---
 # Driver Frame Widgets
-# ---
 cms = gui_setup.gui_items.Item("Cms", 0, 0)
 cms.item_setup(driver_frame, pad, txtfield_size, "m/N", "mm/N", "um/N")
 data_manager.set_cms(cms)
@@ -226,10 +216,7 @@ vg = gui_setup.gui_items.Item("Vg", 0, 7)
 vg.item_setup(driver_frame, pad, txtfield_size, "W")
 data_manager.set_vg(vg)
 
-
-# ---
 # Box & Port Frame Widgets
-# ---
 portArea = gui_setup.gui_items.Item("Port Cross Sectional Area", 0, 0)
 portArea.item_setup(box_frame, pad, txtfield_size, "in^2", "cm^2", "ft^2", "mm^2", 'm^2')
 data_manager.set_port_area(portArea)
@@ -262,18 +249,17 @@ portTuning.item_setup(box_frame, pad, txtfield_size, 'no name', use_btn=False)
 portTuning.txtField.configure(state='readonly') # Make it read-only
 data_manager.set_port_tuning(portTuning)
 
+# Create a frame to hold the buttons, placed below the other frames
+button_frame = ttk.Frame(input_frame)
+button_frame.grid(column=0, row=1, columnspan=2, padx=pad, pady=pad, sticky="w") # Use 'w' (west) or 'ew' (east-west)
 
-# Controls Frame Widgets
 submit = gui_setup.buttons.Btn(0, 0, "Submit")
-submit.btn_setup(controls_frame, pad)
+submit.btn_setup(button_frame, pad)
 
 loadTest = gui_setup.buttons.Btn(1, 0, "Load Test")
-loadTest.btn_setup(controls_frame, pad)
+loadTest.btn_setup(button_frame, pad)
 
-# ----
 # Centering Logic
-# ----
-
 # Force tkinter to update and calculate the window's required size
 mainWindow.window.update_idletasks()
 
