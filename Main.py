@@ -207,7 +207,7 @@ le.item_setup(driver_frame, pad, txtfield_size, "H", "mH")
 data_manager.set_le(le)
 
 re = gui_setup.gui_items.Item("Re", 0, 3)
-re.item_setup(driver_frame, pad, txtfield_size, "ohm")
+re.item_setup(driver_frame, pad, txtfield_size, "ohm", use_btn=False)
 data_manager.set_re(re)
 
 rms = gui_setup.gui_items.Item("Rms", 0, 4)
@@ -215,7 +215,7 @@ rms.item_setup(driver_frame, pad, txtfield_size, "Kg/s", "Ns/s")
 data_manager.set_rms(rms)
 
 bl = gui_setup.gui_items.Item("Bl", 0, 5)
-bl.item_setup(driver_frame, pad, txtfield_size, "Tm", "Na")
+bl.item_setup(driver_frame, pad, txtfield_size, "Tm", "N/A")
 data_manager.set_bl(bl)
 
 sd = gui_setup.gui_items.Item("Sd", 0, 6)
@@ -257,7 +257,7 @@ numPorts.item_setup(box_frame, pad, txtfield_size, 'no name', use_btn=False)
 numPorts.insert_default_txtfield("1")
 data_manager.set_number_of_ports(numPorts)
 
-portTuning = gui_setup.gui_items.Item("Port Tuning", 0, 5)
+portTuning = gui_setup.gui_items.Item("Port Tuning (fb)", 0, 5)
 portTuning.item_setup(box_frame, pad, txtfield_size, 'no name', use_btn=False)
 portTuning.txtField.configure(state='readonly') # Make it read-only
 data_manager.set_port_tuning(portTuning)
