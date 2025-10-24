@@ -127,22 +127,22 @@ graph_select_combo.bind("<<ComboboxSelected>>", _on_graph_select)
 graph_range_frame = ttk.Frame(graph_controls_frame)
 graph_range_frame.pack(side="left", padx=(0, pad*2))
 
-# Start freq for graph (MOVED TO GRAPH TAB)
+# Start freq for graph
 start_freq = gui_setup.gui_items.Item("Start Freq", 0, 0)
 # Use grid within this sub-frame for alignment
-start_freq.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False) # No unit button needed
+start_freq.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False, min_value=1) # No unit button needed
 start_freq.insert_default_txtfield("10")
 data_manager.set_start_freq(start_freq)
 
-# End freq for graph (MOVED TO GRAPH TAB)
+# End freq for graph
 stop_freq = gui_setup.gui_items.Item("Stop Freq", 2, 0) # Place next to start freq
-stop_freq.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False)
+stop_freq.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False, max_value=30000)
 stop_freq.insert_default_txtfield("120")
 data_manager.set_stop_freq(stop_freq)
 
-# Step size (MOVED TO GRAPH TAB)
+# Step size
 graph_step = gui_setup.gui_items.Item("Step (Hz)", 4, 0) # Place next to stop freq
-graph_step.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False)
+graph_step.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False, min_value=.01)
 graph_step.insert_default_txtfield(".5")
 data_manager.set_graph_step(graph_step)
 

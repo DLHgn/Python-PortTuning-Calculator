@@ -18,6 +18,9 @@ class Item(object):
         self.cmb = buttons.Combo(self.col + 1, self.rw, self.text)
         self.is_valid = True  # Track validation state
         self.default_bg = None  # Store default background color
+        self.min_value = None
+        self.max_value = None
+        self.error_message = ""
 
     def validate_numeric_input(self, event=None):
         # Checks if the Entry content is a valid float.
@@ -29,7 +32,7 @@ class Item(object):
         if self.txtField.cget('state') == 'readonly':
             return True  # Skip validation for read-only fields like Port Tuning
 
-        # --- STORE DEFAULT BORDER SETTINGS (if not already stored) ---
+        # Store default border settings (if not already stored)
         # Initialize storage attributes if they don't exist
         if not hasattr(self, 'default_highlight_thickness'):
             self.default_highlight_thickness = None
@@ -54,31 +57,50 @@ class Item(object):
                 if not self.default_highlight_color: self.default_highlight_color = 'SystemButtonFace'  # A guess
             except:
                 self.default_highlight_color = 'SystemButtonFace'  # Fallback color
-        # --- END STORING DEFAULTS ---
 
-        current_value = self.get_txtfield()
+        current_value_str = self.get_txtfield()
+        self.is_valid = False  # Assume invalid until proven otherwise
+        self.error_message = ""  # Reset error
+
         try:
-            float(current_value)  # Attempt conversion
+            current_value_float = float(current_value_str)
 
-            # --- If successful, RESET border using stored defaults ---
-            # Ensure attributes were successfully stored before using
-            reset_thickness = getattr(self, 'default_highlight_thickness', 0)
-            reset_color = getattr(self, 'default_highlight_color', 'SystemButtonFace')
+            # CHECK BOUNDS
+            valid_bounds = True
+            if self.min_value is not None and current_value_float < self.min_value:
+                self.error_message = f"Value must be >= {self.min_value}"
+                valid_bounds = False
+            elif self.max_value is not None and current_value_float > self.max_value:
+                self.error_message = f"Value must be <= {self.max_value}"
+                valid_bounds = False
 
-            self.txtField.config(
-                highlightthickness=reset_thickness,
-                highlightbackground=reset_color
-            )
+            if valid_bounds:
+                # If successful and within bounds, RESET border
+                reset_thickness = getattr(self, 'default_highlight_thickness', 0)
+                reset_color = getattr(self, 'default_highlight_color', 'SystemButtonFace')
+                self.txtField.config(
+                    highlightthickness=reset_thickness,
+                    highlightbackground=reset_color
+                )
+                self.is_valid = True
+                return True
+            else:
+                # If out of bounds, set RED border
+                self.txtField.config(
+                    highlightthickness=2,
+                    highlightbackground="red"
+                )
+                # Keep is_valid = False
+                return False
 
-            self.is_valid = True
-            return True
         except ValueError:
-            # --- If fails, set RED border ---
+            # If float conversion fails, set RED border
+            self.error_message = "Invalid numeric input"
             self.txtField.config(
-                highlightthickness=2,  # Make border visible (2 pixels)
-                highlightbackground="red"  # Set border color to red
+                highlightthickness=2,
+                highlightbackground="red"
             )
-            self.is_valid = False
+            # Keep is_valid = False
             return False
 
     def get_txtfield(self):
@@ -106,7 +128,8 @@ class Item(object):
         self.txtField.insert(0, value)
         self.txtField.configure(state='readonly')  #change back to read only so user can't alter value
 
-    def item_setup(self, window, pad, txtfield_width, default_text, *args, use_btn=True, use_cmb=False):
+    def item_setup(self, window, pad, txtfield_width, default_text, *args, use_btn=True,
+                   use_cmb=False, min_value=None, max_value=None):
         # Sets up an item into the given window with given formatting values. Has the option of using
         # a button, combobox, or neither. Will always create a label and Entry object. Default is to use a button
         # @param window is a tkinter Window object that the item will be added to
@@ -116,8 +139,15 @@ class Item(object):
         # @param *args takes in any number of strings to represent the other text options for the button or combobox
         # @param use_btn is a boolean to identify if a button object should be incorporated with the item (default True)
         # @param use_cmb is a boolean to i.d. if a combobox object should be incorporated with the item (default False)
+        # @param min_value is an optional value to allow for a minimum value check
+        # @param max_value is an optional value to allow for a maximum value check
         label = Label(window, text=self.text)
         label.grid(column=self.col, row=self.rw, padx=pad, pady=pad, sticky=E)
+
+        # Store min/max values
+        self.min_value = min_value
+        self.max_value = max_value
+
         if use_btn and not use_cmb:
             #Entry Object
             self.txtField = Entry(window, width=txtfield_width)
