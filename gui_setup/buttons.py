@@ -1,8 +1,7 @@
 from tkinter.ttk import *
 import gui_setup.computations as computations
 import gui_setup.gui_data_manager as data_manager
-import gui_setup.gui_items
-
+import tkinter.messagebox as messagebox
 
 class Btn(object):
     # Btn class takes in two integers, and any number of strings to create a tkinter button
@@ -39,35 +38,39 @@ class Btn(object):
         if self.btntxt == 'Submit':
             print("--- Running Analysis ---")
 
-            # Gather all raw inputs needed for calculations
-            params = data_manager.gather_all_inputs()
+            if not data_manager.validate_all_inputs():
+                print("Input validation failed. Calculation stopped.")
+                return  # Stop processing if validation fails
 
             # Calculate the Port Tuning Frequency (fb) using the dedicated function
             # (This assumes port_tuning_calculation is now in computations.py
             # and accepts the params dictionary)
             try:
+                # Gather all raw inputs
+                params = data_manager.gather_all_inputs()
+
+                # Calculate and display Port Tuning
                 calculated_fb = computations.port_tuning_calculation(params)
-                # Update the read-only Port Tuning display field
                 data_manager.set_port_tuning_output(calculated_fb)
                 print(f"Calculated Port Tuning (fb): {calculated_fb:.2f} Hz")
+
+                # Get graph settings
+                start_freq = data_manager.get_start_freq()
+                stop_freq = data_manager.get_stop_freq()
+                graph_step = data_manager.get_graph_step()
+                canvas = data_manager.get_graph_canvas()
+                graph_type = data_manager.get_selected_graph_type()
+
+                # Generate and display the graph
+                if canvas:
+                    computations.plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step=graph_step)
+                else:
+                    print("Error: Graph canvas not found.")
+
             except Exception as e:
-                print(f"Error calculating or displaying port tuning: {e}")
-                # Optionally display an error message in the field
-                data_manager.set_port_tuning_output("Error")
-
-            # Get graph settings from the GUI
-            start_freq = data_manager.get_start_freq()
-            stop_freq = data_manager.get_stop_freq()
-            graph_step = data_manager.get_graph_step()
-            canvas = data_manager.get_graph_canvas()
-            graph_type = data_manager.get_selected_graph_type()
-
-            # Generate and display the graph
-            if canvas:
-                # Pass the already gathered params dictionary
-                computations.plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step=graph_step)
-            else:
-                print("Error: Graph canvas not found.")
+                # Catch potential errors during calculation/plotting if inputs were *just* valid
+                print(f"Error during calculation or plotting: {e}")
+                messagebox.showerror("Calculation Error", f"An error occurred: {e}")
 
             print("------------------------------------------")
 
