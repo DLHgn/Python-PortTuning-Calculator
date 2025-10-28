@@ -312,8 +312,6 @@ def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
     # Loops through a frequency range, calls the main analysis function,
     # and draws the result on the provided Tkinter canvas.
 
-    print(f"Generating {graph_type} plot from {start_freq} Hz to {stop_freq} Hz with step {step} Hz...")
-
     # Create the list of frequencies to test
     num_steps = int((stop_freq - start_freq) / step) + 1
     frequencies = np.linspace(start_freq, stop_freq, num=num_steps)

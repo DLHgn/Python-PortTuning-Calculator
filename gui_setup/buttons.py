@@ -29,7 +29,6 @@ class Btn(object):
             result = current_text if current_text else self.btntxt
         except Exception as e:
             # If cget fails (e.g., widget destroyed), return initial text
-            print(f"DEBUG: btn_content failed for '{self.btntxt}' button: {e}")  # Debug print for errors
             result = self.btntxt
         return result
 
@@ -44,10 +43,7 @@ class Btn(object):
         # This function handles the button event. Differentiates between a button click used to determine units of given
         # data and the submit button that starts the calculations.
         if self.btntxt == 'Submit':
-            print("--- Running Analysis ---")
-
             if not data_manager.validate_all_inputs():
-                print("Input validation failed. Calculation stopped.")
                 return  # Stop processing if validation fails
 
             # Calculate the Port Tuning Frequency (fb) using the dedicated function
@@ -60,7 +56,6 @@ class Btn(object):
                 # Calculate and display Port Tuning
                 calculated_fb = computations.port_tuning_calculation(params)
                 data_manager.set_port_tuning_output(calculated_fb)
-                print(f"Calculated Port Tuning (fb): {calculated_fb:.2f} Hz")
 
                 # Get graph settings
                 start_freq = data_manager.get_start_freq()
@@ -72,15 +67,10 @@ class Btn(object):
                 # Generate and display the graph
                 if canvas:
                     computations.plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step=graph_step)
-                else:
-                    print("Error: Graph canvas not found.")
 
             except Exception as e:
                 # Catch potential errors during calculation/plotting if inputs were *just* valid
-                print(f"Error during calculation or plotting: {e}")
                 messagebox.showerror("Calculation Error", f"An error occurred: {e}")
-
-            print("------------------------------------------")
 
         # This elif is added for test data purposes. Can be removed once not needed
         elif self.btntxt == 'Load Test':

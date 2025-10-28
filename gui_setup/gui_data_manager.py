@@ -96,7 +96,6 @@ def convert_to_si(item_name, target_si_unit):
     if not current_unit:  # Checks for None or empty string
         if item_name in ["re", "rms", "bl", "vg"]:  # Add other unitless items if needed
             current_unit = target_si_unit  # e.g., target_si_unit is 'ohm' for 're'
-    # ----------------------
 
     # Special case: Combo box units need mapping if display differs from factor key
     unit_map = {
@@ -288,7 +287,6 @@ def gather_all_inputs():
             'port_area_m2': convert_to_si('port_area', 'm^2'),
             'port_length_m': convert_to_si('port_length', 'm')
         }
-        # print("Gathered Params:", params) # Debug print
         return params
     except ValueError as e:
         # Error already shown by convert_to_si, just re-raise
@@ -305,8 +303,6 @@ def set_port_tuning_output(value):
             item_obj.set_output_text(f"{value:.2f} Hz")
         else:
              item_obj.set_output_text(str(value)) # Show error messages etc.
-    else:
-        print("Warning: Port Tuning output field not registered.")
 
 # This function is used for setting test data. Can be removed when no longer needed
 def load_test_values():
@@ -330,9 +326,7 @@ def load_test_values():
                 elif base_key == 'end_correction' and hasattr(item_obj, 'set_cmb_text'):
                      item_obj.set_cmb_text(value)
                 # Add elif for other potential future comboboxes if needed
-            else:
-                print(f"Warning: GUI item '{item_name_unit}' not found for unit '{key}'.")
-            # --------------------------------------------------------
+
         else:
             # --- Handling values (only set text field if it exists) ---
             item_key_map = {
@@ -349,9 +343,6 @@ def load_test_values():
                 # ----------------------
                     item_obj.set_input_text(value) # Only call if txtField exists
                 # No need to handle combobox text here, it's done via the _unit key
-            elif key not in item_key_map and not key.endswith('_unit'):
-                print(f"Warning: GUI item '{item_name}' not found for value key '{key}'.")
-            # ------------------------------------------------------------
 
     # ... (setting defaults, validation, tuning calculation remains the same) ...
     if item_obj := _gui_items.get("start_freq"): item_obj.set_input_text("10")
@@ -364,6 +355,5 @@ def load_test_values():
         set_port_tuning_output(calculated_fb)
         print(f"Calculated Port Tuning for Test Data: {calculated_fb:.2f} Hz")
     except Exception as e:
-        print(f"Error calculating tuning for test data: {e}")
         set_port_tuning_output("Error")
     print("Test values processing complete.")
