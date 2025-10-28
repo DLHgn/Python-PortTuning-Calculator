@@ -119,7 +119,7 @@ graph_options = ["Impedance", "Cone Excursion (mm)", "Port Velocity (m/s)", "Gro
 graph_select_combo = ttk.Combobox(graph_select_frame, values=graph_options, state='readonly', width=20) # Adjusted width
 graph_select_combo.set(graph_options[0])
 graph_select_combo.pack(side="left")
-data_manager.set_graph_select_combo(graph_select_combo)
+data_manager.register_item("graph_select_combo", graph_select_combo)
 graph_select_combo.bind("<<ComboboxSelected>>", _on_graph_select)
 
 
@@ -132,19 +132,19 @@ start_freq = gui_setup.gui_items.Item("Start Freq", 0, 0)
 # Use grid within this sub-frame for alignment
 start_freq.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False, min_value=1) # No unit button needed
 start_freq.insert_default_txtfield("10")
-data_manager.set_start_freq(start_freq)
+data_manager.register_item("start_freq", start_freq)
 
 # End freq for graph
 stop_freq = gui_setup.gui_items.Item("Stop Freq", 2, 0) # Place next to start freq
 stop_freq.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False, max_value=30000)
 stop_freq.insert_default_txtfield("120")
-data_manager.set_stop_freq(stop_freq)
+data_manager.register_item("stop_freq", stop_freq)
 
 # Step size
 graph_step = gui_setup.gui_items.Item("Step (Hz)", 4, 0) # Place next to stop freq
 graph_step.item_setup(graph_range_frame, pad, txtfield_size, "Hz", use_btn=False, min_value=.01)
 graph_step.insert_default_txtfield(".5")
-data_manager.set_graph_step(graph_step)
+data_manager.register_item("graph_step", graph_step)
 
 
 # Update Button (Right Side)
@@ -170,7 +170,7 @@ toolbar.update()
 toolbar.pack(side="bottom", fill="x")
 canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
 
-data_manager.set_graph_canvas(canvas)
+data_manager.register_item("graph_canvas", canvas)
 
 # Organize the "Inputs" Tab with Labelframes
 # We'll create two groups
@@ -186,48 +186,48 @@ box_frame.grid(column=1, row=0, padx=pad, pady=pad, sticky="nw", ipadx=pad, ipad
 # Driver Frame Widgets
 cms = gui_setup.gui_items.Item("Cms", 0, 0)
 cms.item_setup(driver_frame, pad, txtfield_size, "m/N", "mm/N", "um/N")
-data_manager.set_cms(cms)
+data_manager.register_item("cms", cms)
 
 mms = gui_setup.gui_items.Item("Mms", 0, 1)
 mms.item_setup(driver_frame, pad, txtfield_size, "Kg", "g")
-data_manager.set_mms(mms)
+data_manager.register_item("mms", mms)
 
 le = gui_setup.gui_items.Item("Le", 0, 2)
 le.item_setup(driver_frame, pad, txtfield_size, "H", "mH")
-data_manager.set_le(le)
+data_manager.register_item("le", le)
 
 re = gui_setup.gui_items.Item("Re", 0, 3)
 re.item_setup(driver_frame, pad, txtfield_size, "ohm", use_btn=False)
-data_manager.set_re(re)
+data_manager.register_item("re", re)
 
 rms = gui_setup.gui_items.Item("Rms", 0, 4)
 rms.item_setup(driver_frame, pad, txtfield_size, "Kg/s", "Ns/s")
-data_manager.set_rms(rms)
+data_manager.register_item("rms", rms)
 
 bl = gui_setup.gui_items.Item("Bl", 0, 5)
 bl.item_setup(driver_frame, pad, txtfield_size, "Tm", "N/A")
-data_manager.set_bl(bl)
+data_manager.register_item("bl", bl)
 
 sd = gui_setup.gui_items.Item("Sd", 0, 6)
 sd.item_setup(driver_frame, pad, txtfield_size, "m^2", "cm^2", "mm^2", "in^2", "ft^2")
-data_manager.set_sd(sd)
+data_manager.register_item("sd", sd)
 
 vg = gui_setup.gui_items.Item("Vg", 0, 7)
 vg.item_setup(driver_frame, pad, txtfield_size, "W")
-data_manager.set_vg(vg)
+data_manager.register_item("vg", vg)
 
 # Box & Port Frame Widgets
 portArea = gui_setup.gui_items.Item("Port Cross Sectional Area", 0, 0)
 portArea.item_setup(box_frame, pad, txtfield_size, "in^2", "cm^2", "ft^2", "mm^2", 'm^2')
-data_manager.set_port_area(portArea)
+data_manager.register_item("port_area", portArea)
 
 netVolume = gui_setup.gui_items.Item("Net Volume (Box)", 0, 1)
 netVolume.item_setup(box_frame, pad, txtfield_size, "in^3", "L", "cm^3", "ft^3", "mm^3", "m^3")
-data_manager.set_net_volume(netVolume)
+data_manager.register_item("net_volume", netVolume)
 
 portLength = gui_setup.gui_items.Item("Length of Port", 0, 2)
 portLength.item_setup(box_frame, pad, txtfield_size, "in", "cm", "ft", "m", "mm")
-data_manager.set_port_length(portLength)
+data_manager.register_item("port_length", portLength)
 
 endCorrection = gui_setup.gui_items.Item("End Correction", 0, 3)
 endCorrection.item_setup(box_frame, pad, txtfield_size, "One Flanged End",
@@ -237,17 +237,17 @@ endCorrection.item_setup(box_frame, pad, txtfield_size, "One Flanged End",
                          "2 Common Walls",
                          "1 Common Wall",
                          use_btn=False, use_cmb=True)
-data_manager.set_end_correction(endCorrection)
+data_manager.register_item("end_correction", endCorrection)
 
 numPorts = gui_setup.gui_items.Item("Number of Ports", 0, 4)
 numPorts.item_setup(box_frame, pad, txtfield_size, 'no name', use_btn=False)
 numPorts.insert_default_txtfield("1")
-data_manager.set_number_of_ports(numPorts)
+data_manager.register_item("number_of_ports", numPorts)
 
 portTuning = gui_setup.gui_items.Item("Port Tuning (fb)", 0, 5)
 portTuning.item_setup(box_frame, pad, txtfield_size, 'no name', use_btn=False)
 portTuning.txtField.configure(state='readonly') # Make it read-only
-data_manager.set_port_tuning(portTuning)
+data_manager.register_item("port_tuning", portTuning)
 
 # Create a frame to hold the buttons, placed below the other frames
 button_frame = ttk.Frame(input_frame)
