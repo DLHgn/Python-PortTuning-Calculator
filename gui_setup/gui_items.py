@@ -14,6 +14,7 @@ class Item(object):
         self.col = col
         self.rw = rw
         self.txtField = Entry()
+        self._unit_widget_type = None
         self.button = buttons.Btn(self.col, self.rw, self.text)
         self.cmb = buttons.Combo(self.col + 1, self.rw, self.text)
         self.is_valid = True  # Track validation state
@@ -109,7 +110,9 @@ class Item(object):
 
     def get_btn(self):
         #returns the text that is currently in the button object of the item
-        return str(self.button.btn_content())
+        if hasattr(self, 'button') and self.button:
+            return str(self.button.btn_content())  # Make sure it calls the method
+        return ""  # Return empty string if button object doesn't exist
 
     def get_cmb(self):
         #returns the text that is currently selected in the combobox object of the item
@@ -128,41 +131,40 @@ class Item(object):
         self.txtField.insert(0, value)
         self.txtField.configure(state='readonly')  #change back to read only so user can't alter value
 
+    def get_current_unit(self):
+        unit = None
+        widget_type = getattr(self, '_unit_widget_type', None)
+        if widget_type == 'button':
+            unit = self.get_btn()
+        elif widget_type == 'cmb':
+            unit = self.get_cmb()
+        return unit
+
     def item_setup(self, window, pad, txtfield_width, default_text, *args, use_btn=True,
                    use_cmb=False, min_value=None, max_value=None):
-        # Sets up an item into the given window with given formatting values. Has the option of using
-        # a button, combobox, or neither. Will always create a label and Entry object. Default is to use a button
-        # @param window is a tkinter Window object that the item will be added to
-        # @param pad is an integer with the padding being equal for x and y
-        # @param txtfield_width is an integer that represents the width of the Entry object
-        # @param default_text is a string that represents the first text option of a button or combobox
-        # @param *args takes in any number of strings to represent the other text options for the button or combobox
-        # @param use_btn is a boolean to identify if a button object should be incorporated with the item (default True)
-        # @param use_cmb is a boolean to i.d. if a combobox object should be incorporated with the item (default False)
-        # @param min_value is an optional value to allow for a minimum value check
-        # @param max_value is an optional value to allow for a maximum value check
+
         label = Label(window, text=self.text)
         label.grid(column=self.col, row=self.rw, padx=pad, pady=pad, sticky=E)
-
-        # Store min/max values
         self.min_value = min_value
         self.max_value = max_value
 
         if use_btn and not use_cmb:
-            #Entry Object
             self.txtField = Entry(window, width=txtfield_width)
-            self.txtField.grid(column=self.col + 1, row=self.rw, padx=pad, pady=pad, sticky=E+W)
-            self.txtField.bind("<KeyRelease>", self.validate_numeric_input)  # Validate on key release
-            self.txtField.bind("<FocusOut>", self.validate_numeric_input)  # Validate when leaving field
-            #Button Object
+            self.txtField.grid(column=self.col + 1, row=self.rw, padx=pad, pady=pad, sticky=E + W)
+            self.txtField.bind("<KeyRelease>", self.validate_numeric_input)
+            self.txtField.bind("<FocusOut>", self.validate_numeric_input)
+            # --- ENSURE THIS LINE EXISTS ---
+            self._unit_widget_type = 'button'
+            # -------------------------------
             self.button = buttons.Btn(self.col + 2, self.rw, default_text, args)
             self.button.btn_setup(window, pad)
         elif use_cmb:
-            #ComboBox Object
+            self._unit_widget_type = 'cmb'
+            self.txtField = None  # No entry field for combobox items currently
             self.cmb = buttons.Combo(self.col + 1, self.rw, default_text, *args)
             self.cmb.combo_setup(window)
-        else:
-            #Entry Object
+        else:  # Entry only
+            self._unit_widget_type = None
             self.txtField = Entry(window, width=txtfield_width)
             self.txtField.grid(column=self.col + 1, row=self.rw, padx=pad, pady=pad, sticky=E + W)
             self.txtField.bind("<KeyRelease>", self.validate_numeric_input)

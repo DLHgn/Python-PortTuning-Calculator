@@ -4,6 +4,13 @@ import cmath
 import matplotlib.pyplot as plt
 import numpy as np
 
+#conversion constants needed for port tuning calculations
+M2_TO_IN2 = 1550.003
+M2_TO_CM2 = 10000.0
+M3_TO_IN3 = 61023.7
+M3_TO_L = 1000.0
+M_TO_IN = 39.3701
+M_TO_CM = 100.0
 
 class CursorAnnotation(object):
     # Creates an interactive data cursor that "snaps" to the plot line
@@ -77,30 +84,57 @@ def calculate_port_diameter(value):
 
 
 def port_tuning_calculation(params):
-    # Calculates port tuning freq (fb) using the averaged formula.
-    # Uses raw values from the params dictionary.
+    # Calculates port tuning freq (fb) using averaged formula.
+    # Extracts SI values from params dict and converts internally.
 
-    # Get all the raw values from the params dict
-    number_of_ports = params['number_of_ports']
-    port_area_in = params['port_area_in'] * number_of_ports
-    port_area_cm = params['port_area_cm']
-    net_volume_in = params['net_volume_in']
-    net_volume_l = params['net_volume_l']
-    port_length_in = params['port_length_in']
-    port_length_cm = params['port_length_cm']
-    end_correction = params['end_correction']
+    # Get SI values from params
+    # Sd is already in m^2, Vb is already in m^3
+    port_area_m2 = params.get('port_area_m2', 0)  # Use Sd for port area in m^2
+    net_volume_m3 = params.get('vb', 0)  # Use Vb for net volume in m^3
+    port_length_m = params.get('port_length_m', 0)  # Get Port Length in meters
+    number_of_ports = params.get('number_of_ports', 1)
+    end_correction_factor = params.get('end_correction', 0.732)  # Get factor
 
-    port_diameter = calculate_port_diameter(port_area_cm)
+    # --- Internal Conversions ---
+    port_area_in2 = (port_area_m2 * M2_TO_IN2) * number_of_ports  # Total area in^2
+    port_area_cm2 = (port_area_m2 * M2_TO_CM2)  # Single port area cm^2 for diameter calc
+    net_volume_in3 = net_volume_m3 * M3_TO_IN3
+    net_volume_l = net_volume_m3 * M3_TO_L
+    port_length_in = port_length_m * M_TO_IN
+    port_length_cm = port_length_m * M_TO_CM
+
+    # Check for zero values to prevent division errors
+    if net_volume_m3 <= 0 or port_area_m2 <= 0 or number_of_ports <= 0:
+        return 0  # Or raise an error
+
+    port_diameter_cm = calculate_port_diameter(port_area_cm2)
+    if port_diameter_cm <= 0:
+        return 0  # Avoid math domain error later
 
     # JL Audio equation
-    port_tuning1 = 0.159 * math.sqrt(
-        port_area_in * 1.84E8 / (net_volume_in * (port_length_in + end_correction * math.sqrt(port_area_in))))
+    jl_denominator = (net_volume_in3 * (port_length_in + end_correction_factor * math.sqrt(port_area_in2 / number_of_ports))) # Use single port area for sqrt part
+    if jl_denominator <= 0:
+        port_tuning1 = 0
+    else:
+        port_tuning1 = 0.159 * math.sqrt(port_area_in2 * 1.84E8 / jl_denominator)
+
 
     # DIY Audio equation
-    port_tuning2 = (153.501 * port_diameter * math.sqrt(number_of_ports)) / (
-                (math.sqrt(net_volume_l)) * (math.sqrt(port_length_cm + end_correction * port_diameter)))
+    diy_denominator = (math.sqrt(net_volume_l) * math.sqrt(port_length_cm + end_correction_factor * port_diameter_cm))
+    if diy_denominator == 0:
+         port_tuning2 = 0
+    else:
+        port_tuning2 = (153.501 * port_diameter_cm * math.sqrt(number_of_ports)) / diy_denominator
 
-    return (port_tuning1 + port_tuning2) / 2
+
+    # Return average, handle potential NaN if one formula failed
+    if math.isnan(port_tuning1) or math.isnan(port_tuning2):
+        # Decide how to handle: return 0, return the valid one, or raise error
+        if not math.isnan(port_tuning1): return port_tuning1
+        if not math.isnan(port_tuning2): return port_tuning2
+        return 0 # Fallback if both fail
+    else:
+        return (port_tuning1 + port_tuning2) / 2
 
 def run_full_analysis_at_frequency(frequency, params):
    # This is the main controller function for this file.
@@ -148,7 +182,9 @@ def run_full_analysis_at_frequency(frequency, params):
     # Use core results to find final values
     # ----
 
-    port_vel = calculate_port_velocity(core_results, params['port_area_cm'] / 10000, s, lmap)
+    num_ports = params.get('number_of_ports', 1)
+    single_port_area_m2 = params.get('port_area_m2', 0) / num_ports if num_ports > 0 else 0
+    port_vel = calculate_port_velocity(core_results, single_port_area_m2, s, lmap)
     cone_exc = calculate_cone_excursion(core_results, w)
     zin_phase_radians = cmath.phase(core_results['zin'])  # Phase in radians
 
@@ -204,28 +240,37 @@ def calculate_pd_i_u(s, params, ccab, ral, lmap, z_mech=None):
 
     # Calculate mechanical impedance
     if z_mech is None:
-        z_mech = rms + s * mms + 1 / (s * cms)
+        try:
+            z_mech = rms + s * mms + (1 / (s * cms) if s else float('inf'))
+        except ZeroDivisionError:
+            z_mech = float('inf')
 
     # Calculate electrical impedance
     z_elec = re + s * le
-    zb = 1 / (s * ccab + (1 / ral) + (1 / (s * lmap)))
+    try:
+        zb_inv = (s * ccab if ccab != float('inf') else 0) + \
+                 (1 / ral if ral != float('inf') and ral != 0 else 0) + \
+                 (1 / (s * lmap) if s and lmap != float('inf') else 0)
+        zb = 1 / zb_inv if zb_inv else float('inf')
+    except ZeroDivisionError:
+        zb = float('inf')
 
     # Combine impedances
-    z_mech_total = z_mech + sd ** 2 * zb
-    zin = z_elec + (bl ** 2 / z_mech_total)
+    z_mech_total = z_mech + sd ** 2 * zb if z_mech != float('inf') and zb != float('inf') else float('inf')
+    zin = z_elec + (bl ** 2 / z_mech_total) if z_mech_total else z_elec # Avoid division by zero
 
     # ----
     # Solve for primary unknowns
     # ----
 
     # i represents the loop mesh current of the amplifier/driver electrical portions of the circuit model
-    i = vg / zin
+    i = vg / zin if zin else 0
 
     # pd represents the voltage across loop mesh of the driver acoustical and box portion of the circuit model
-    pd = i * (bl * sd * zb) / z_mech_total
+    pd = i * (bl * sd * zb) / z_mech_total if z_mech_total else 0
 
     # u represents the loop mesh current of the driver mechanical portions of the circuit model
-    u = (bl * i - sd * pd) / z_mech
+    u = (bl * i - sd * pd) / z_mech if z_mech else 0
 
     return {
         "zin": zin,
@@ -236,10 +281,13 @@ def calculate_pd_i_u(s, params, ccab, ral, lmap, z_mech=None):
     }
 
 
-def calculate_port_velocity(core_results, port_area, s, lmap):
+def calculate_port_velocity(core_results, single_port_area_m2, s, lmap):
     # Calculates port velocity from core results
 
-    pd = core_results['pd']
+    pd = core_results.get('pd', 0)
+
+    if not s or lmap == float('inf') or single_port_area_m2 <= 0:
+        return 0
 
     # Calculates the impedance of the port
     zlmap = s * lmap
@@ -247,13 +295,16 @@ def calculate_port_velocity(core_results, port_area, s, lmap):
     # Calculates RMS port velocity
     ilmap = pd / zlmap
 
+    if not zlmap: return 0
+
     # Returns the peak velocity (RMS * sqrt(s))/area
-    return (ilmap * math.sqrt(2)) / port_area
+    return (ilmap * math.sqrt(2)) / single_port_area_m2
 
 
 def calculate_cone_excursion(core_results, w):
     # Calculates cone excursion from core results
-    u = core_results['u']
+    u = core_results.get('u', 0)
+    if not w: return 0
     return (math.sqrt(2) * u) / w
 
 
@@ -261,7 +312,7 @@ def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
     # Loops through a frequency range, calls the main analysis function,
     # and draws the result on the provided Tkinter canvas.
 
-    print(f"Generating Impedance plot from {start_freq} Hz to {stop_freq} Hz with step {step} Hz...")
+    print(f"Generating {graph_type} plot from {start_freq} Hz to {stop_freq} Hz with step {step} Hz...")
 
     # Create the list of frequencies to test
     num_steps = int((stop_freq - start_freq) / step) + 1
@@ -271,18 +322,20 @@ def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
 
     # Loop and extract the correct data based on the graph_type
     for freq in frequencies:
-        results = run_full_analysis_at_frequency(freq, params)
+        if freq == 0:  # Avoid calculations exactly at 0 Hz
+            results = {"zin": float('inf'), "cone_excursion_mm": 0, "port_velocity_ms": 0, "zin_phase_rad": 0}
+        else:
+            results = run_full_analysis_at_frequency(freq, params)
         if graph_type == "Impedance":
-            plot_data.append(abs(results["zin"]))
+            plot_data.append(abs(results.get("zin", float('inf'))))
         elif graph_type == "Cone Excursion (mm)":
-            plot_data.append(results["cone_excursion_mm"])
+            plot_data.append(results.get("cone_excursion_mm", 0))
         elif graph_type == "Port Velocity (m/s)":
-            plot_data.append(results["port_velocity_ms"])
+            plot_data.append(results.get("port_velocity_ms", 0))
         elif graph_type == "Group Delay (ms)":
-            # Just store phase for now, calculate delay later
-            phase_data_rad.append(results["zin_phase_rad"])
-        else:  # Fallback to Impedance
-            plot_data.append(abs(results["zin"]))
+            phase_data_rad.append(results.get("zin_phase_rad", 0))
+        else:
+            plot_data.append(abs(results.get("zin", float('inf'))))
 
     # Setup plot based on type after data gathering
     if graph_type == "Impedance":
@@ -311,8 +364,8 @@ def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
 
         # Numerical derivative of phase w.r.t. angular frequency
         # np.gradient calculates the gradient using central differences
-        dphi_domega = np.gradient(unwrapped_phase, angular_frequencies)
-
+        # Use edge_order=2 for potentially better accuracy at edges
+        dphi_domega = np.gradient(unwrapped_phase, angular_frequencies, edge_order=2)
         # Group Delay = -dphi/domega (in seconds)
         group_delay_sec = -dphi_domega
 
@@ -332,7 +385,8 @@ def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
     ax = fig.add_subplot(111)
 
     # Draw the new plot on the axes
-    line, = ax.plot(frequencies, plot_data) # Plot the selected data
+    plot_data_cleaned = [d if np.isfinite(d) else np.nan for d in plot_data]
+    line, = ax.plot(frequencies, plot_data_cleaned) # Plot the selected data
     ax.set_title(f"System {graph_type}") # Dynamic title
     ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel(y_label)  # Dynamic Y-label
@@ -342,7 +396,7 @@ def plot_selected_data(canvas, params, start_freq, stop_freq, graph_type, step):
         ax.set_yscale('log')
     else:
         ax.set_yscale('linear')
-        ax.set_ylim(bottom=0)  # Ensure linear plots start at 0
+        ax.set_ylim(bottom=0 if min(plot_data_cleaned, default=0) >= 0 else None)
 
     # Auto-set x-ticks based on range, or set manually
     ax.set_xticks(np.linspace(start_freq, stop_freq, num=10, dtype=int))

@@ -22,8 +22,16 @@ class Btn(object):
         self.clickCount = 0
 
     def btn_content(self):
-        #returns current text on button
-        return self.btn.cget('text')
+        #returns current text on button with fallback
+        result = None
+        try:
+            current_text = self.btn.cget('text')
+            result = current_text if current_text else self.btntxt
+        except Exception as e:
+            # If cget fails (e.g., widget destroyed), return initial text
+            print(f"DEBUG: btn_content failed for '{self.btntxt}' button: {e}")  # Debug print for errors
+            result = self.btntxt
+        return result
 
     def btn_setup(self, window, pad):
         #Sets up the button and adds it to the window at the given location
