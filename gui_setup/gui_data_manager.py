@@ -4,6 +4,7 @@ import tkinter.messagebox as messagebox
 #this import is used for setting test data and can be removed/commented out when not needed
 from . import test_data
 from . import computations as computations
+import tkinter as tk
 
 _gui_items = {}
 
@@ -160,15 +161,30 @@ def validate_all_inputs():
 
     return all_valid
 
+def get_vc_type():
+    var_obj = _gui_items.get("vc_type")
+    if var_obj and isinstance(var_obj, tk.StringVar):
+        return var_obj.get()
+    return "Single VC" # Default if not found
+
+def get_vc_wiring():
+    var_obj = _gui_items.get("vc_wiring")
+    if var_obj and isinstance(var_obj, tk.StringVar):
+        return var_obj.get()
+    return "Series" # Default if not found
+
 # Below is our getters
-def get_re():
+def get_re_base():
     return convert_to_si("re", "ohm") # Target unit doesn't really matter (factor=1)
 
 def get_rms():
     return convert_to_si("rms", "Kg/s") # Target unit doesn't really matter
 
-def get_bl():
+def get_bl_base():
     return convert_to_si("bl", "Tm") # Target unit doesn't really matter
+
+def get_le_base():
+    return convert_to_si('le', 'H')
 
 def get_vg():
     # Keep using 'V' internally based on previous decision, although labeled 'W'
@@ -262,34 +278,54 @@ def get_selected_graph_type():
 
 # Master function which creates a dictionary of GUI values
 def gather_all_inputs():
-    # Gathers all values, converts to SI using the general function, returns dict.
+    """Gathers values, adjusts Re/Le/Bl for VC, converts to SI, returns dict."""
     try:
+        # --- Get VC configuration ---
+        vc_type = get_vc_type()
+        vc_wiring = get_vc_wiring()
+
+        # --- Get BASE electrical/motor values ---
+        re_base = get_re_base()
+        le_base = get_le_base()
+        bl_base = get_bl_base()
+
+        # --- Calculate EFFECTIVE Re, Le, Bl ---
+        re_eff, le_eff, bl_eff = re_base, le_base, bl_base # Start with base values
+
+        if vc_type == "Dual VC":
+            if vc_wiring == "Series":
+                re_eff = re_base * 2
+                le_eff = le_base * 2
+                bl_eff = bl_base * 2
+            elif vc_wiring == "Parallel":
+                re_eff = re_base / 2
+                le_eff = le_base / 2
+                bl_eff = bl_base # Remains the same for parallel impedance calc
+            print(f"Dual VC ({vc_wiring}): Re={re_eff:.3f}, Le={le_eff:.4f}, Bl={bl_eff:.2f}") # Debug print
+        # --------------------------------------
+
         params = {
-            # Core driver params (converted to SI)
-            're': convert_to_si('re', 'ohm'),             # N/A -> ohm (factor 1)
-            'le': convert_to_si('le', 'H'),               # H or mH -> H
-            'bl': convert_to_si('bl', 'Tm'),              # N/A -> Tm (factor 1)
-            'sd': convert_to_si('sd', 'm^2'),             # Area units -> m^2
-            'cms': convert_to_si('cms', 'm/N'),           # Compl units -> m/N
-            'mms': convert_to_si('mms', 'Kg'),            # Mass units -> Kg
-            'rms': convert_to_si('rms', 'Kg/s'),          # N/A -> Kg/s (factor 1)
-            'vg': convert_to_si('vg', 'V'),               # N/A -> V (factor 1) for calculation
+            # --- Use EFFECTIVE values ---
+            're': re_eff,
+            'le': le_eff,
+            'bl': bl_eff,
+            # --------------------------
+            'sd': convert_to_si('sd', 'm^2'),
+            'cms': convert_to_si('cms', 'm/N'),
+            'mms': convert_to_si('mms', 'Kg'),
+            'rms': convert_to_si('rms', 'Kg/s'), # Assuming get_rms returns SI directly now
+            'vg': convert_to_si('vg', 'V'),
 
-            # Physics constants (remain the same)
-            'ql': 10,
-            'p0': 1.18, # Corrected density
-            'c': 343.68,
+            'ql': 10, 'p0': 1.18, 'c': 343.68, # Constants
 
-            # Box/port params (converted to SI where needed by computations.py)
-            'vb': convert_to_si('net_volume', 'm^3'),     # Volume units -> m^3
-            'number_of_ports': get_number_of_ports(),     # Integer (no conversion)
-            'end_correction': get_end_correction(),       # Factor (no conversion)
-            'port_area_m2': convert_to_si('port_area', 'm^2'),
-            'port_length_m': convert_to_si('port_length', 'm')
+            'vb': convert_to_si('net_volume', 'm^3'),
+            'number_of_ports': get_number_of_ports(),
+            'end_correction': get_end_correction(),
+            'port_length_m': convert_to_si('port_length', 'm'),
+            'port_area_m2': convert_to_si('port_area', 'm^2')
         }
         return params
     except ValueError as e:
-        # Error already shown by convert_to_si, just re-raise
         raise
     except Exception as e:
         messagebox.showerror("Error", f"Failed to gather inputs: {e}")
@@ -312,6 +348,15 @@ def load_test_values():
     data = test_data.test_values
     print("Loading test values...")
 
+    # Set VC Type and Wiring first (assuming Single VC default for test data)
+    vc_type_var = _gui_items.get("vc_type")
+    vc_wiring_var = _gui_items.get("vc_wiring")
+    default_vc_type = data.get("vc_type", "Single VC")  # Get from test data or default
+    default_vc_wiring = data.get("vc_wiring", "Series")  # Get from test data or default
+
+    if vc_type_var: vc_type_var.set(default_vc_type)
+    if vc_wiring_var: vc_wiring_var.set(default_vc_wiring)
+
     for key, value in data.items():
         if key.endswith('_unit'):
             # --- Handling units (includes setting combobox text) ---
@@ -326,6 +371,8 @@ def load_test_values():
                 elif base_key == 'end_correction' and hasattr(item_obj, 'set_cmb_text'):
                      item_obj.set_cmb_text(value)
                 # Add elif for other potential future comboboxes if needed
+        elif key in ["vc_type", "vc_wiring"]:
+            continue
 
         else:
             # --- Handling values (only set text field if it exists) ---
