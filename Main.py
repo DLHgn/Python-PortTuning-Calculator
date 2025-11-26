@@ -7,6 +7,8 @@ from matplotlib.backends.backend_tkagg import (
 )
 import gui_setup.computations as computations
 import tkinter.messagebox as messagebox
+import tkinter as tk
+from tkinter import ttk, StringVar, E, W
 
 pad = 5
 txtfield_size = 8
@@ -80,6 +82,17 @@ def _on_graph_select(event=None):
 def _on_update_graph_clicked():
     # Called when the "Update Graph" button is clicked.
     _update_graph_view()
+
+def _on_vc_type_change(*args):
+    vc_type = vc_type_var.get()
+    if vc_type == "Dual VC":
+        # Enable wiring radio buttons
+        wiring_series_rb.config(state=tk.NORMAL)
+        wiring_parallel_rb.config(state=tk.NORMAL)
+    else:
+        # Disable wiring radio buttons
+        wiring_series_rb.config(state=tk.DISABLED)
+        wiring_parallel_rb.config(state=tk.DISABLED)
 
 # setup main window
 # We make it larger to accommodate the new layout
@@ -215,6 +228,39 @@ data_manager.register_item("sd", sd)
 vg = gui_setup.gui_items.Item("Vg", 0, 7)
 vg.item_setup(driver_frame, pad, txtfield_size, "W")
 data_manager.register_item("vg", vg)
+
+# Determine next available row in driver_frame (assuming Vg was row 7)
+next_row = 8
+
+# VC Type Selection
+vc_type_label = ttk.Label(driver_frame, text="VC Type:")
+vc_type_label.grid(column=0, row=next_row, padx=pad, pady=pad, sticky=E)
+
+vc_type_var = StringVar(value="Single VC") # Default value
+vc_type_var.trace_add("write", _on_vc_type_change) # Add callback
+
+vc_single_rb = ttk.Radiobutton(driver_frame, text="Single", variable=vc_type_var, value="Single VC")
+vc_single_rb.grid(column=1, row=next_row, padx=pad, pady=pad, sticky=W)
+vc_dual_rb = ttk.Radiobutton(driver_frame, text="Dual", variable=vc_type_var, value="Dual VC")
+vc_dual_rb.grid(column=2, row=next_row, padx=(0, pad), pady=pad, sticky=W) # Span slightly different for layout
+
+# Register the variable, not the buttons themselves
+data_manager.register_item("vc_type", vc_type_var)
+
+# VC Wiring Selection (Initially Disabled)
+next_row += 1
+vc_wiring_label = ttk.Label(driver_frame, text="Dual VC Wiring:")
+vc_wiring_label.grid(column=0, row=next_row, padx=pad, pady=pad, sticky=E)
+
+vc_wiring_var = StringVar(value="Series") # Default value
+
+wiring_series_rb = ttk.Radiobutton(driver_frame, text="Series", variable=vc_wiring_var, value="Series", state=tk.DISABLED)
+wiring_series_rb.grid(column=1, row=next_row, padx=pad, pady=pad, sticky=W)
+wiring_parallel_rb = ttk.Radiobutton(driver_frame, text="Parallel", variable=vc_wiring_var, value="Parallel", state=tk.DISABLED)
+wiring_parallel_rb.grid(column=2, row=next_row, padx=(0, pad), pady=pad, sticky=W)
+
+# Register the variable
+data_manager.register_item("vc_wiring", vc_wiring_var)
 
 # Box & Port Frame Widgets
 portArea = gui_setup.gui_items.Item("Port Cross Sectional Area", 0, 0)
