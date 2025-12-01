@@ -325,14 +325,14 @@ def validate_all_inputs():
 
 def load_test_values():
     """
-    Loads test values into GUI items, handling different widget types safely.
+    Loads test values into GUI items, handling variables, text fields,
+    comboboxes, and UNIT buttons correctly.
     """
     global _gui_items
     data = test_data.test_values
     print("Loading test values...")
 
     # 1. Handle Variables (Radio Buttons)
-    # Check if keys exist in test data, otherwise use defaults
     vc_type_var = _gui_items.get("vc_type")
     if vc_type_var:
         vc_type_var.set(data.get("vc_type", "Single VC"))
@@ -341,55 +341,61 @@ def load_test_values():
     if vc_wiring_var:
         vc_wiring_var.set(data.get("vc_wiring", "Series"))
 
-    # 2. Handle GUI Items (Entry and Comboboxes)
-    for key, val in data.items():
-        # Remap legacy keys from test_data if necessary
-        if key == 'vb':
-            item_name = 'net_volume'
-        else:
-            item_name = key
+    # Map legacy test_data keys to current internal names if they differ
+    # 'vb' in test_data maps to 'net_volume' in registry
+    key_map = {'vb': 'net_volume'}
 
-        # Skip keys we already handled or calculated fields
-        if item_name in ['port_tuning', 'vc_type', 'vc_wiring', 'vb_unit',
-                         'le_unit', 'bl_unit', 'sd_unit', 'cms_unit',
-                         'mms_unit', 'rms_unit', 'port_area_unit', 'port_length_unit']:
+    for key, val in data.items():
+        # Skip calculated or variable fields
+        if key in ['port_tuning', 'vc_type', 'vc_wiring']:
             continue
 
+        # --- A. Handle Unit Buttons (e.g., 'vb_unit') ---
+        if key.endswith('_unit'):
+            base_key = key[:-5]  # remove '_unit'
+            item_name = key_map.get(base_key, base_key)
+            item = _gui_items.get(item_name)
+
+            # If the item exists and has a button setter, update it
+            if item and hasattr(item, 'set_btn_text'):
+                item.set_btn_text(val)
+            continue
+
+        # --- B. Handle Values (e.g., 'vb') ---
+        item_name = key_map.get(key, key)
         item = _gui_items.get(item_name)
+
         if not item:
             continue
 
-        # --- SAFETY CHECK ---
-        # If it is a Text Entry Item
+        # Type 1: Text Entry Items
         if hasattr(item, 'txtField') and item.txtField is not None:
-            # Only write if it's not Read-Only (prevents errors on output fields)
             try:
+                # Only write if valid and not Read-Only
                 if str(item.txtField.cget('state')) == 'normal':
                     item.set_input_text(val)
             except Exception:
                 pass
 
-                # If it is a Combobox Item (e.g., End Correction)
-        elif hasattr(item, 'set_cmb_text') and hasattr(item, 'cmb') and item.cmb:
+                # Type 2: Combobox Items (e.g., End Correction)
+        elif hasattr(item, 'set_cmb_text'):
             item.set_cmb_text(val)
 
     # 3. Set Defaults for New Features (if not in test data)
-    # Ensure Num Drivers is at least 1
     nd_item = _gui_items.get("number_of_drivers")
+    # Reset to 1 if empty or 0 to ensure valid state
     if nd_item and (not nd_item.get_txtfield() or nd_item.get_txtfield() == "0"):
         nd_item.set_input_text("1")
 
     # 4. Trigger Calculation & Updates
     try:
-        # Force validation to clear red borders
         validate_all_inputs()
 
-        # Calculate
         params = gather_all_inputs()
         calculated_fb = computations.port_tuning_calculation(params)
         set_port_tuning_output(calculated_fb)
 
-        # Update System Impedance Display
+        # Update System Impedance
         total_re = calculate_total_system_re(params)
         sys_imp_item = _gui_items.get("system_re")
         if sys_imp_item:
