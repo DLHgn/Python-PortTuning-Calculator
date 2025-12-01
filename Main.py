@@ -94,6 +94,55 @@ def _on_vc_type_change(*args):
         wiring_series_rb.config(state=tk.DISABLED)
         wiring_parallel_rb.config(state=tk.DISABLED)
 
+
+def _update_system_impedance(*args):
+    """Calculates and displays the final nominal impedance."""
+    try:
+        # We call the calculator directly.
+        # Note: We don't call gather_all_inputs() here to avoid triggering
+        # full validation on every keystroke, just the Re calculation.
+        total_re = data_manager.calculate_total_system_re()
+
+        # Find the display item
+        imp_item = data_manager._gui_items.get("system_re")
+        if imp_item:
+            imp_item.set_output_text(f"{total_re:.2f} \u03A9")  # Ohm symbol
+    except Exception:
+        # Silent fail on typing errors, wait for valid input
+        pass
+
+
+def _on_num_drivers_change(*args):
+    """Updates wiring topology options when number of drivers changes."""
+    try:
+        # Get raw text from entry widget
+        nd_item = data_manager._gui_items.get("number_of_drivers")
+        if not nd_item: return
+
+        val_str = nd_item.get_txtfield()
+        n_drivers = int(val_str) if val_str else 1
+
+        if n_drivers < 1: n_drivers = 1
+
+        # Get valid modes
+        modes = data_manager.get_valid_wiring_modes(n_drivers)
+
+        # Update Combo
+        combo = data_manager._gui_items.get("wiring_topology").cmb.cmb
+        current_selection = combo.get()
+
+        combo['values'] = tuple(modes)
+
+        # Reset selection if current invalid, or default to logical first choice
+        if current_selection not in modes:
+            combo.current(0)
+
+        # Trigger impedance update
+        _update_system_impedance()
+
+    except ValueError:
+        pass  # Ignore incomplete input
+
 # setup main window
 # We make it larger to accommodate the new layout
 mainWindow = gui_setup.window_setup.Window()
@@ -229,38 +278,83 @@ vg = gui_setup.gui_items.Item("Vg", 0, 7)
 vg.item_setup(driver_frame, pad, txtfield_size, "W")
 data_manager.register_item("vg", vg)
 
-# Determine next available row in driver_frame (assuming Vg was row 7)
-next_row = 8
+# Start determining rows after Vg (which is at row 7)
+current_row = 8
 
-# VC Type Selection
+# --- STEP 1: Define the "Unit" (The Individual Driver) ---
+
+# 1. VC Type Selection
 vc_type_label = ttk.Label(driver_frame, text="VC Type:")
-vc_type_label.grid(column=0, row=next_row, padx=pad, pady=pad, sticky=E)
+vc_type_label.grid(column=0, row=current_row, padx=pad, pady=pad, sticky=E)
 
-vc_type_var = StringVar(value="Single VC") # Default value
-vc_type_var.trace_add("write", _on_vc_type_change) # Add callback
+# Create a sub-frame to group buttons closer together
+vc_type_frame = ttk.Frame(driver_frame)
+vc_type_frame.grid(column=1, row=current_row, padx=pad, pady=pad, sticky=W, columnspan=2)
 
-vc_single_rb = ttk.Radiobutton(driver_frame, text="Single", variable=vc_type_var, value="Single VC")
-vc_single_rb.grid(column=1, row=next_row, padx=pad, pady=pad, sticky=W)
-vc_dual_rb = ttk.Radiobutton(driver_frame, text="Dual", variable=vc_type_var, value="Dual VC")
-vc_dual_rb.grid(column=2, row=next_row, padx=(0, pad), pady=pad, sticky=W) # Span slightly different for layout
+vc_type_var = StringVar(value="Single VC")
+vc_type_var.trace_add("write", _on_vc_type_change)
+vc_type_var.trace_add("write", _update_system_impedance)
 
-# Register the variable, not the buttons themselves
+vc_single_rb = ttk.Radiobutton(vc_type_frame, text="Single", variable=vc_type_var, value="Single VC")
+vc_single_rb.pack(side="left", padx=(0, 10)) # 10px gap between buttons
+vc_dual_rb = ttk.Radiobutton(vc_type_frame, text="Dual", variable=vc_type_var, value="Dual VC")
+vc_dual_rb.pack(side="left")
+
 data_manager.register_item("vc_type", vc_type_var)
 
-# VC Wiring Selection (Initially Disabled)
-next_row += 1
+current_row += 1
+
+# 2. Dual VC Wiring Selection
 vc_wiring_label = ttk.Label(driver_frame, text="Dual VC Wiring:")
-vc_wiring_label.grid(column=0, row=next_row, padx=pad, pady=pad, sticky=E)
+vc_wiring_label.grid(column=0, row=current_row, padx=pad, pady=pad, sticky=E)
 
-vc_wiring_var = StringVar(value="Series") # Default value
+# Create a sub-frame for wiring buttons
+vc_wiring_frame = ttk.Frame(driver_frame)
+vc_wiring_frame.grid(column=1, row=current_row, padx=pad, pady=pad, sticky=W, columnspan=2)
 
-wiring_series_rb = ttk.Radiobutton(driver_frame, text="Series", variable=vc_wiring_var, value="Series", state=tk.DISABLED)
-wiring_series_rb.grid(column=1, row=next_row, padx=pad, pady=pad, sticky=W)
-wiring_parallel_rb = ttk.Radiobutton(driver_frame, text="Parallel", variable=vc_wiring_var, value="Parallel", state=tk.DISABLED)
-wiring_parallel_rb.grid(column=2, row=next_row, padx=(0, pad), pady=pad, sticky=W)
+vc_wiring_var = StringVar(value="Series")
+vc_wiring_var.trace_add("write", _update_system_impedance)
 
-# Register the variable
+wiring_series_rb = ttk.Radiobutton(vc_wiring_frame, text="Series", variable=vc_wiring_var, value="Series", state=tk.DISABLED)
+wiring_series_rb.pack(side="left", padx=(0, 10))
+wiring_parallel_rb = ttk.Radiobutton(vc_wiring_frame, text="Parallel", variable=vc_wiring_var, value="Parallel", state=tk.DISABLED)
+wiring_parallel_rb.pack(side="left")
+
 data_manager.register_item("vc_wiring", vc_wiring_var)
+
+current_row += 1
+
+# --- STEP 2: Define the "System" (The Group of Drivers) ---
+
+# 3. Number of Drivers
+numDrivers = gui_setup.gui_items.Item("Num Drivers", 0, current_row)
+numDrivers.item_setup(driver_frame, pad, txtfield_size, "no unit", use_btn=False, min_value=1)
+numDrivers.insert_default_txtfield("1")
+# Stop the field from stretching to fill the column width
+numDrivers.txtField.grid_configure(sticky='w')
+numDrivers.txtField.bind("<KeyRelease>", _on_num_drivers_change)
+data_manager.register_item("number_of_drivers", numDrivers)
+
+current_row += 1
+
+# 4. System Wiring Topology
+wiringTopo = gui_setup.gui_items.Item("System Wiring", 0, current_row)
+# Note: This wide dropdown forces the column to be wide, but now the other fields won't stretch to match it
+wiringTopo.item_setup(driver_frame, pad, 18, "Single Driver", use_btn=False, use_cmb=True)
+data_manager.register_item("wiring_topology", wiringTopo)
+wiringTopo.cmb.cmb.bind("<<ComboboxSelected>>", _update_system_impedance)
+
+current_row += 1
+
+# --- STEP 3: The Result ---
+
+# 5. Final Impedance (Read Only)
+sysImp = gui_setup.gui_items.Item("Total System Re", 0, current_row)
+sysImp.item_setup(driver_frame, pad, txtfield_size, "Ohm", use_btn=False)
+sysImp.txtField.configure(state='readonly')
+# Stop the field from stretching
+sysImp.txtField.grid_configure(sticky='w')
+data_manager.register_item("system_re", sysImp)
 
 # Box & Port Frame Widgets
 portArea = gui_setup.gui_items.Item("Port Cross Sectional Area", 0, 0)
